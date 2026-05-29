@@ -483,6 +483,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
       <div class="header-btns">
         <button class="pill-btn" onclick="showBookings()">Bookings <span class="notif-badge" id="bookingBadge">0</span></button>
         <button class="pill-btn" onclick="showAdmin()">Admin</button>
+        <button class="pill-btn" onclick="toggleLanguage()" id="langBtn">Hindi</button>
       </div>
     </div>
     <div class="header-title">What do you need help with?</div>
@@ -608,6 +609,50 @@ button, a { -webkit-tap-highlight-color: transparent; }
 </div>
 
 <script>
+  let currentLanguage = "en";
+
+const LANG_TEXT = {
+  en: {
+    button: "Hindi",
+    title: "What do you need help with?",
+    subtitle: "Trusted workers, at your doorstep",
+    search: "Search",
+    searchPlaceholder: "Electrician, plumber, area...",
+    bannerTitle: "Book in 30 seconds",
+    bannerSub: "Verified and rated professionals",
+    services: "Our Services",
+    workers: "Available Workers"
+  },
+  hi: {
+    button: "English",
+    title: "Aapko kis service ki zaroorat hai?",
+    subtitle: "Trusted workers, aapke doorstep par",
+    search: "Search",
+    searchPlaceholder: "Electrician, plumber, area...",
+    bannerTitle: "30 second me booking karein",
+    bannerSub: "Verified aur rated professionals",
+    services: "Hamari Services",
+    workers: "Available Workers"
+  }
+};
+
+function toggleLanguage() {
+  currentLanguage = currentLanguage === "en" ? "hi" : "en";
+  applyLanguage();
+}
+
+function applyLanguage() {
+  const t = LANG_TEXT[currentLanguage];
+  document.getElementById("langBtn").textContent = t.button;
+  document.querySelector(".header-title").textContent = t.title;
+  document.querySelector(".header-sub").textContent = t.subtitle;
+  document.querySelector(".search-bar span").textContent = t.search;
+  document.getElementById("searchInput").placeholder = t.searchPlaceholder;
+  document.querySelector(".banner h3").textContent = t.bannerTitle;
+  document.querySelector(".banner p").textContent = t.bannerSub;
+  document.querySelector(".section-title").textContent = t.services;
+  document.getElementById("workersTitle").textContent = t.workers;
+}
 const SERVICES = ["Electrician", "Plumber", "Carpenter", "AC Repair", "Cleaning"];
 const SERVICE_ICONS = { "Electrician": "E", "Plumber": "P", "Carpenter": "C", "AC Repair": "AC", "Cleaning": "CL" };
 const SERVICE_COLORS = { "Electrician": "#fef3c7", "Plumber": "#ccfbf1", "Carpenter": "#ffedd5", "AC Repair": "#dbeafe", "Cleaning": "#dcfce7" };
