@@ -4,16 +4,32 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
+const rootDir = __dirname;
+const publicDir = path.join(rootDir, "public");
+const dataDir = path.join(rootDir, "data");
+const dbPath = path.join(dataDir, "db.json");
+const envPath = path.join(rootDir, ".env");
+
+function loadEnv() {
+  if (!fs.existsSync(envPath)) return;
+  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
+    const index = trimmed.indexOf("=");
+    const key = trimmed.slice(0, index).trim();
+    const value = trimmed.slice(index + 1).trim().replace(/^["']|["']$/g, "");
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadEnv();
+
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_API_KEY = process.env.FIXIT_API_KEY || "change-this-secret";
 const COMMISSION_RATE = 0.1;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
-
-const rootDir = __dirname;
-const publicDir = path.join(rootDir, "public");
-const dataDir = path.join(rootDir, "data");
-const dbPath = path.join(dataDir, "db.json");
 
 const defaultDb = {
   workers: [
@@ -55,6 +71,13 @@ function sendJson(res, status, payload) {
 
 function sendError(res, status, message) {
   sendJson(res, status, { error: message });
+}
+
+class RazorpayHttpError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
 }
 
 function parseBody(req) {
@@ -172,7 +195,10 @@ function requestJson({ method = "GET", hostname, path: requestPath, auth, body }
       res.on("end", () => {
         const parsed = raw ? JSON.parse(raw) : {};
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          return reject(new Error(parsed.error?.description || parsed.error || "Razorpay request failed"));
+          return reject(new RazorpayHttpError(
+            res.statusCode,
+            parsed.error?.description || parsed.error || "Razorpay request failed"
+          ));
         }
         resolve(parsed);
       });
@@ -192,6 +218,36 @@ function verifyRazorpaySignature(orderId, paymentId, signature) {
   const actual = Buffer.from(String(signature || ""));
   const expectedBuffer = Buffer.from(expected);
   return actual.length === expectedBuffer.length && crypto.timingSafeEqual(actual, expectedBuffer);
+}
+
+function requireRazorpayKeys(res) {
+  if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) return true;
+  sendError(res, 503, "Razorpay keys are not configured on the server");
+  return false;
+}
+
+function razorpayOrderPayload(input = {}) {
+  const amount = Number(input.amount);
+  const currency = String(input.currency || "INR").trim().toUpperCase();
+  const receipt = String(input.receipt || `fixit_${Date.now()}`).trim().slice(0, 40);
+  if (!Number.isFinite(amount) || amount < 100) {
+    throw new Error("Amount must be at least 100 paise");
+  }
+  return {
+    amount: Math.round(amount),
+    currency,
+    receipt
+  };
+}
+
+async function createRazorpayOrder(payload) {
+  return requestJson({
+    method: "POST",
+    hostname: "api.razorpay.com",
+    path: "/v1/orders",
+    auth: `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`,
+    body: payload
+  });
 }
 
 function serveStatic(req, res) {
@@ -254,22 +310,66 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { bookings });
   }
 
-  if (req.method === "POST" && url.pathname === "/api/payments/razorpay/order") {
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-      return sendError(res, 503, "Razorpay keys are not configured on the server");
+  if (req.method === "POST" && url.pathname === "/api/create-order") {
+    if (!requireRazorpayKeys(res)) return;
+    const body = await parseBody(req);
+    try {
+      const payload = razorpayOrderPayload(body);
+      const order = await createRazorpayOrder(payload);
+      return sendJson(res, 201, {
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: RAZORPAY_KEY_ID
+      });
+    } catch (error) {
+      if (error instanceof RazorpayHttpError) {
+        return sendError(res, error.statusCode === 401 ? 401 : 500, error.message);
+      }
+      return sendError(res, 400, error.message || "Invalid order request");
     }
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/verify-payment") {
+    const body = await parseBody(req);
+    const orderId = body.razorpay_order_id || body.order_id;
+    const paymentId = body.razorpay_payment_id || body.payment_id;
+    const signature = body.razorpay_signature || body.signature;
+    if (!orderId || !paymentId || !signature) {
+      return sendError(res, 400, "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required");
+    }
+    if (!verifyRazorpaySignature(orderId, paymentId, signature)) {
+      return sendError(res, 400, "Payment verification failed");
+    }
+
+    if (body.workerId) {
+      const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
+      if (!worker) return sendError(res, 404, "Worker not found");
+      const customer = sanitizeCustomer(body.customer || {});
+      const booking = makeBooking(worker, customer, {
+        method: "razorpay",
+        status: "paid",
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId
+      });
+      db.bookings.push(booking);
+      writeDb(db);
+      return sendJson(res, 201, { ok: true, booking });
+    }
+
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/payments/razorpay/order") {
+    if (!requireRazorpayKeys(res)) return;
     const body = await parseBody(req);
     const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
     if (!worker) return sendError(res, 404, "Worker not found");
     sanitizeCustomer(body.customer || {});
     const price = Math.round((worker.charge + (worker.charge * COMMISSION_RATE)) * 100);
     const receipt = `fixit_${Date.now()}_${worker.id}`;
-    const order = await requestJson({
-      method: "POST",
-      hostname: "api.razorpay.com",
-      path: "/v1/orders",
-      auth: `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`,
-      body: {
+    try {
+      const order = await createRazorpayOrder({
         amount: price,
         currency: "INR",
         receipt,
@@ -277,9 +377,14 @@ async function handleApi(req, res) {
           workerId: String(worker.id),
           service: worker.service
         }
+      });
+      return sendJson(res, 201, { order, keyId: RAZORPAY_KEY_ID });
+    } catch (error) {
+      if (error instanceof RazorpayHttpError) {
+        return sendError(res, error.statusCode === 401 ? 401 : 500, error.message);
       }
-    });
-    return sendJson(res, 201, { order, keyId: RAZORPAY_KEY_ID });
+      return sendError(res, 500, error.message || "Razorpay order failed");
+    }
   }
 
   if (req.method === "POST" && url.pathname === "/api/payments/razorpay/verify") {

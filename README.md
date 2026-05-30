@@ -28,11 +28,8 @@ Use the same key in the app's Admin screen to view private bookings, add workers
 ## Optional payment settings
 
 ```powershell
-$env:FIXIT_UPI_ID="test@razorpay"
+$env:FIXIT_UPI_ID="yourupi@bank"
 $env:FIXIT_MERCHANT_NAME="FixIt"
-$env:FIXIT_API_KEY="12345"
-npm start
-
 ```
 
 ## Razorpay setup
@@ -40,10 +37,8 @@ npm start
 Create API keys in your Razorpay Dashboard and set them before starting the server:
 
 ```powershell
-$env:RAZORPAY_KEY_ID="apna_razorpay_key_id"
-$env:RAZORPAY_KEY_SECRET="apna_razorpay_key_secret"
-$env:FIXIT_API_KEY="12345"
-
+$env:RAZORPAY_KEY_ID="rzp_test_or_live_key"
+$env:RAZORPAY_KEY_SECRET="your_razorpay_secret"
 npm start
 ```
 
@@ -77,9 +72,8 @@ Optional environment variables:
 ```text
 FIXIT_UPI_ID=yourupi@bank
 FIXIT_MERCHANT_NAME=FixIt
-RAZORPAY_KEY_ID: rzp_test_SvX1dYtW9En9hP
-RAZORPAY_KEY_SECRET: Nx6tZRG7L9mG1MHOh6JiH1CL
-npm start
+RAZORPAY_KEY_ID=rzp_test_or_live_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
 PORT=3000
 ```
 
