@@ -40,8 +40,10 @@ npm start
 Create API keys in your Razorpay Dashboard and set them before starting the server:
 
 ```powershell
-RAZORPAY_KEY_ID: rzp_test_SvX1dYtW9En9hP
-RAZORPAY_KEY_SECRET: Nx6tZRG7L9mG1MHOh6JiH1CL
+$env:RAZORPAY_KEY_ID="apna_razorpay_key_id"
+$env:RAZORPAY_KEY_SECRET="apna_razorpay_key_secret"
+$env:FIXIT_API_KEY="12345"
+
 npm start
 ```
 
