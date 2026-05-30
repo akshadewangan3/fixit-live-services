@@ -28,7 +28,7 @@ Use the same key in the app's Admin screen to view private bookings, add workers
 ## Optional payment settings
 
 ```powershell
-$env:FIXIT_UPI_ID="yourupi@bank"
+$env:FIXIT_UPI_ID="test@razorpay"
 $env:FIXIT_MERCHANT_NAME="FixIt"
 $env:FIXIT_API_KEY="12345"
 npm start
