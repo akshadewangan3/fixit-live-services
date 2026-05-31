@@ -7,13 +7,13 @@ const crypto = require("crypto");
 const rootDir = __dirname;
 const publicDir = path.join(rootDir, "public");
 const dataDir = path.join(rootDir, "data");
+const uploadDir = path.join(publicDir, "uploads");
 const dbPath = path.join(dataDir, "db.json");
 const envPath = path.join(rootDir, ".env");
 
 function loadEnv() {
   if (!fs.existsSync(envPath)) return;
-  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
-  for (const line of lines) {
+  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
     const index = trimmed.indexOf("=");
@@ -22,7 +22,6 @@ function loadEnv() {
     if (key && process.env[key] === undefined) process.env[key] = value;
   }
 }
-
 loadEnv();
 
 const PORT = Number(process.env.PORT || 3000);
@@ -31,31 +30,55 @@ const COMMISSION_RATE = 0.1;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
+const services = ["Electrician", "Plumber", "Carpenter", "AC Repair", "Cleaning"];
+
+const defaultWorkers = [
+  { id: 1, name: "Ramesh Kumar", service: "Electrician", charge: 300, phone: "9876543210", rating: 4.8, exp: "7 yrs, wiring, fuse and switchboard work", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1226, lng: 83.1956 },
+  { id: 2, name: "Suresh Patel", service: "Plumber", charge: 250, phone: "9123456780", rating: 4.5, exp: "5 yrs, leakage and bathroom fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1268, lng: 83.1814 },
+  { id: 3, name: "Mohan Verma", service: "Electrician", charge: 350, phone: "9988776655", rating: 4.7, exp: "10 yrs, commercial and home wiring", area: "Darima", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1841, lng: 83.2425 },
+  { id: 4, name: "Lakshmi Devi", service: "Cleaning", charge: 400, phone: "9871234560", rating: 4.9, exp: "3 yrs, deep cleaning and kitchen cleaning", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1162, lng: 83.2051 },
+  { id: 5, name: "Rajesh Singh", service: "Carpenter", charge: 500, phone: "9765432100", rating: 4.6, exp: "8 yrs, furniture, doors and fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1329, lng: 83.1993 },
+  { id: 6, name: "Dinesh Gupta", service: "AC Repair", charge: 600, phone: "9654321098", rating: 4.4, exp: "6 yrs, all AC brands and gas refill", area: "Ambikapur", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1084, lng: 83.1882 }
+];
+
 const defaultDb = {
-  workers: [
-    { id: 1, name: "Ramesh Kumar", service: "Electrician", charge: 300, phone: "9876543210", rating: 4.8, exp: "7 yrs, all wiring and fuse work", area: "Ambikapur", status: "Available" },
-    { id: 2, name: "Suresh Patel", service: "Plumber", charge: 250, phone: "9123456780", rating: 4.5, exp: "5 yrs, pipe fitting and leak fixes", area: "Ambikapur", status: "Available" },
-    { id: 3, name: "Mohan Verma", service: "Electrician", charge: 350, phone: "9988776655", rating: 4.7, exp: "10 yrs, commercial and home wiring", area: "Darima", status: "Busy" },
-    { id: 4, name: "Lakshmi Devi", service: "Cleaning", charge: 400, phone: "9871234560", rating: 4.9, exp: "3 yrs, deep cleaning expert", area: "Ambikapur", status: "Available" },
-    { id: 5, name: "Rajesh Singh", service: "Carpenter", charge: 500, phone: "9765432100", rating: 4.6, exp: "8 yrs, furniture and doors", area: "Ambikapur", status: "Available" },
-    { id: 6, name: "Dinesh Gupta", service: "AC Repair", charge: 600, phone: "9654321098", rating: 4.4, exp: "6 yrs, all AC brands", area: "Ambikapur", status: "Busy" }
-  ],
-  bookings: []
+  customers: [],
+  workers: defaultWorkers,
+  workerApplications: [],
+  bookings: [],
+  reviews: [],
+  helpTickets: []
 };
 
 function ensureDb() {
   fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dbPath)) {
-    fs.writeFileSync(dbPath, JSON.stringify(defaultDb, null, 2));
-  }
+  fs.mkdirSync(uploadDir, { recursive: true });
+  if (!fs.existsSync(dbPath)) writeDb(defaultDb);
 }
 
 function readDb() {
   ensureDb();
-  return JSON.parse(fs.readFileSync(dbPath, "utf8"));
+  const raw = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+  const db = { ...defaultDb, ...raw };
+  db.customers = Array.isArray(db.customers) ? db.customers : [];
+  db.workers = (Array.isArray(db.workers) ? db.workers : []).map(worker => ({
+    verificationStatus: "verified",
+    photoUrl: "",
+    idUrl: "",
+    lat: 23.1226 + (Number(worker.id || 1) * 0.002),
+    lng: 83.1956 + (Number(worker.id || 1) * 0.002),
+    ...worker,
+    status: worker.status === "Available" ? "Online" : worker.status === "Busy" ? "Busy" : (worker.status || "Offline")
+  }));
+  db.workerApplications = Array.isArray(db.workerApplications) ? db.workerApplications : [];
+  db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
+  db.reviews = Array.isArray(db.reviews) ? db.reviews : [];
+  db.helpTickets = Array.isArray(db.helpTickets) ? db.helpTickets : [];
+  return db;
 }
 
 function writeDb(db) {
+  fs.mkdirSync(dataDir, { recursive: true });
   fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 
@@ -73,30 +96,19 @@ function sendError(res, status, message) {
   sendJson(res, status, { error: message });
 }
 
-class RazorpayHttpError extends Error {
-  constructor(statusCode, message) {
-    super(message);
-    this.statusCode = statusCode;
-  }
-}
-
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", chunk => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 4_000_000) {
         reject(new Error("Request body too large"));
         req.destroy();
       }
     });
     req.on("end", () => {
       if (!body) return resolve({});
-      try {
-        resolve(JSON.parse(body));
-      } catch {
-        reject(new Error("Invalid JSON"));
-      }
+      try { resolve(JSON.parse(body)); } catch { reject(new Error("Invalid JSON")); }
     });
   });
 }
@@ -115,66 +127,159 @@ function requireAdmin(req, res) {
   return false;
 }
 
-function sanitizeWorker(input) {
-  const charge = Number(input.charge);
-  const rating = Number(input.rating || 4.5);
-  const phone = String(input.phone || "").replace(/[^\d+]/g, "");
-  if (!input.name || !input.service || !Number.isFinite(charge) || charge <= 0 || phone.length < 10) {
-    throw new Error("Name, service, valid charge, and phone are required");
-  }
-  return {
-    id: Date.now(),
-    name: String(input.name).trim().slice(0, 80),
-    service: String(input.service).trim().slice(0, 40),
-    charge: Math.round(charge),
-    phone,
-    rating: Math.min(5, Math.max(1, Number.isFinite(rating) ? rating : 4.5)),
-    exp: String(input.exp || "Experienced").trim().slice(0, 120),
-    area: String(input.area || "Local").trim().slice(0, 80),
-    status: input.status === "Busy" ? "Busy" : "Available"
-  };
+function phone10(value) {
+  return String(value || "").replace(/[^\d]/g, "").slice(-10);
+}
+
+function cleanText(value, fallback = "", limit = 120) {
+  return String(value || fallback).trim().slice(0, limit);
+}
+
+function saveUpload(file, prefix) {
+  if (!file || !file.dataUrl) return "";
+  const match = String(file.dataUrl).match(/^data:(image\/png|image\/jpeg|image\/webp|application\/pdf);base64,(.+)$/);
+  if (!match) throw new Error(`${prefix} must be PNG, JPG, WEBP, or PDF`);
+  const extByType = { "image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "application/pdf": ".pdf" };
+  const bytes = Buffer.from(match[2], "base64");
+  if (bytes.length > 2_500_000) throw new Error(`${prefix} file must be under 2.5 MB`);
+  fs.mkdirSync(uploadDir, { recursive: true });
+  const fileName = `${prefix.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${extByType[match[1]]}`;
+  fs.writeFileSync(path.join(uploadDir, fileName), bytes);
+  return `/uploads/${fileName}`;
 }
 
 function sanitizeCustomer(input = {}) {
-  const phone = String(input.phone || "").replace(/[^\d]/g, "").slice(-10);
-  if (!input.name || phone.length !== 10) {
-    throw new Error("Customer name and 10 digit phone are required");
+  const phone = phone10(input.phone);
+  if (!input.name || phone.length !== 10) throw new Error("Customer name and 10 digit phone are required");
+  return {
+    id: Number(input.id) || Date.now(),
+    name: cleanText(input.name, "", 80),
+    phone,
+    address: cleanText(input.address, "", 200),
+    city: cleanText(input.city, "Ambikapur", 80),
+    notification: input.notification === false ? false : true,
+    createdAt: input.createdAt || new Date().toISOString()
+  };
+}
+
+function sanitizeWorkerInput(input = {}, status = "pending") {
+  const phone = phone10(input.phone);
+  const charge = Number(input.charge);
+  if (!input.name || phone.length !== 10 || !services.includes(input.service) || !Number.isFinite(charge) || charge < 50) {
+    throw new Error("Worker name, phone, service, and valid charge are required");
   }
   return {
-    name: String(input.name).trim().slice(0, 80),
+    id: Number(input.id) || Date.now(),
+    name: cleanText(input.name, "", 80),
     phone,
-    address: String(input.address || "").trim().slice(0, 180),
-    note: String(input.note || "").trim().slice(0, 140)
+    service: input.service,
+    area: cleanText(input.area, "Ambikapur", 80),
+    charge: Math.round(charge),
+    exp: cleanText(input.exp, "Experienced worker", 180),
+    rating: Number(input.rating || 4.5),
+    status: cleanText(input.status, "Offline", 30),
+    verificationStatus: status,
+    photoUrl: cleanText(input.photoUrl, "", 240),
+    idUrl: cleanText(input.idUrl, "", 240),
+    lat: Number(input.lat || (23.1226 + Math.random() / 30)),
+    lng: Number(input.lng || (83.1956 + Math.random() / 30))
+  };
+}
+
+function makeWorkerApplication(input = {}) {
+  if (!input.photo?.dataUrl || !input.idProof?.dataUrl) throw new Error("Worker photo and ID proof are required");
+  return {
+    ...sanitizeWorkerInput(input, "pending"),
+    status: "Pending",
+    photoUrl: saveUpload(input.photo, "worker-photo"),
+    idUrl: saveUpload(input.idProof, "worker-id"),
+    steps: {
+      personalDetails: true,
+      documents: true,
+      training: false,
+      bankDetails: Boolean(input.bankName || input.upiId)
+    },
+    bankName: cleanText(input.bankName, "", 80),
+    upiId: cleanText(input.upiId, "", 80),
+    appliedAt: new Date().toISOString(),
+    reviewedAt: "",
+    rejectionReason: ""
   };
 }
 
 function makeBooking(worker, customer = {}, payment = {}) {
-  const commission = Math.round(worker.charge * COMMISSION_RATE);
-  const total = worker.charge + commission;
+  const base = Number(worker.charge || 0);
+  const commission = Math.round(base * COMMISSION_RATE);
+  const total = base + commission;
   const now = new Date();
   return {
     id: Date.now(),
     workerId: worker.id,
     workerName: worker.name,
+    workerPhone: worker.phone,
     service: worker.service,
-    area: worker.area,
-    phone: worker.phone,
-    base: worker.charge,
+    workerLocation: { lat: worker.lat, lng: worker.lng, area: worker.area },
+    base,
     commission,
     total,
-    customerName: customer.name || "Customer",
-    customerPhone: customer.phone || "",
-    customerAddress: customer.address || "",
-    note: customer.note || "",
-    paymentMethod: payment.method || "upi",
-    paymentStatus: payment.status || "initiated",
+    customerName: customer.name,
+    customerPhone: customer.phone,
+    customerAddress: customer.address,
+    customerCity: customer.city || "Ambikapur",
+    note: cleanText(customer.note, "", 160),
+    paymentMethod: payment.method || "cash",
+    paymentStatus: payment.status || "pending",
     razorpayOrderId: payment.razorpayOrderId || "",
     razorpayPaymentId: payment.razorpayPaymentId || "",
-    status: "confirmed",
+    status: "requested",
     createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
     time: now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }) +
-      " . " + now.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })
+      " . " + now.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" }),
+    timeline: [
+      { label: "Booking requested", at: now.toISOString() }
+    ]
   };
+}
+
+function publicWorker(worker) {
+  return {
+    id: worker.id,
+    name: worker.name,
+    service: worker.service,
+    charge: worker.charge,
+    phone: worker.phone,
+    rating: worker.rating,
+    exp: worker.exp,
+    area: worker.area,
+    status: worker.status,
+    verificationStatus: worker.verificationStatus,
+    photoUrl: worker.photoUrl,
+    lat: worker.lat,
+    lng: worker.lng
+  };
+}
+
+function reviewUrl(req, bookingId) {
+  const proto = req.headers["x-forwarded-proto"] || "http";
+  const host = req.headers.host || `localhost:${PORT}`;
+  return `${proto}://${host}/?review=${bookingId}`;
+}
+
+function whatsappReviewLink(req, booking) {
+  const text = [
+    `Hi ${booking.customerName}, your FixIt ${booking.service} service is marked completed.`,
+    `Please review ${booking.workerName}: ${reviewUrl(req, booking.id)}`,
+    "Options: Good behaviour, Excellent service, 1 to 5 star rating."
+  ].join("\n");
+  return `https://wa.me/91${booking.customerPhone}?text=${encodeURIComponent(text)}`;
+}
+
+class RazorpayHttpError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
 }
 
 function requestJson({ method = "GET", hostname, path: requestPath, auth, body }) {
@@ -185,20 +290,14 @@ function requestJson({ method = "GET", hostname, path: requestPath, auth, body }
       hostname,
       path: requestPath,
       auth,
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(payload)
-      }
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) }
     }, res => {
       let raw = "";
       res.on("data", chunk => raw += chunk);
       res.on("end", () => {
         const parsed = raw ? JSON.parse(raw) : {};
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          return reject(new RazorpayHttpError(
-            res.statusCode,
-            parsed.error?.description || parsed.error || "Razorpay request failed"
-          ));
+          return reject(new RazorpayHttpError(res.statusCode, parsed.error?.description || parsed.error || "Razorpay request failed"));
         }
         resolve(parsed);
       });
@@ -211,42 +310,21 @@ function requestJson({ method = "GET", hostname, path: requestPath, auth, body }
 
 function verifyRazorpaySignature(orderId, paymentId, signature) {
   if (!RAZORPAY_KEY_SECRET) return false;
-  const expected = crypto
-    .createHmac("sha256", RAZORPAY_KEY_SECRET)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
+  const expected = crypto.createHmac("sha256", RAZORPAY_KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex");
   const actual = Buffer.from(String(signature || ""));
   const expectedBuffer = Buffer.from(expected);
   return actual.length === expectedBuffer.length && crypto.timingSafeEqual(actual, expectedBuffer);
 }
 
-function requireRazorpayKeys(res) {
-  if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) return true;
-  sendError(res, 503, "Razorpay keys are not configured on the server");
-  return false;
-}
-
-function razorpayOrderPayload(input = {}) {
-  const amount = Number(input.amount);
-  const currency = String(input.currency || "INR").trim().toUpperCase();
-  const receipt = String(input.receipt || `fixit_${Date.now()}`).trim().slice(0, 40);
-  if (!Number.isFinite(amount) || amount < 100) {
-    throw new Error("Amount must be at least 100 paise");
-  }
-  return {
-    amount: Math.round(amount),
-    currency,
-    receipt
-  };
-}
-
-async function createRazorpayOrder(payload) {
+async function createRazorpayOrder(amount, receipt) {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) throw new Error("Razorpay keys are not configured");
+  if (!Number.isFinite(Number(amount)) || Number(amount) < 100) throw new Error("Amount must be at least 100 paise");
   return requestJson({
     method: "POST",
     hostname: "api.razorpay.com",
     path: "/v1/orders",
     auth: `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`,
-    body: payload
+    body: { amount: Math.round(Number(amount)), currency: "INR", receipt: cleanText(receipt, `fixit_${Date.now()}`, 40) }
   });
 }
 
@@ -255,22 +333,21 @@ function serveStatic(req, res) {
   const pathname = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
   const filePath = path.normalize(path.join(publicDir, pathname));
   if (!filePath.startsWith(publicDir)) return sendError(res, 403, "Forbidden");
-
   fs.readFile(filePath, (err, data) => {
     if (err) return sendError(res, 404, "Not found");
     const ext = path.extname(filePath).toLowerCase();
-    const contentTypes = {
-      ".html": "text/html; charset=utf-8",
-      ".css": "text/css; charset=utf-8",
-      ".js": "application/javascript; charset=utf-8",
-      ".json": "application/json; charset=utf-8",
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".svg": "image/svg+xml"
-    };
-    res.writeHead(200, { "Content-Type": contentTypes[ext] || "application/octet-stream" });
+    const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "application/javascript", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".pdf": "application/pdf", ".svg": "image/svg+xml" };
+    res.writeHead(200, { "Content-Type": types[ext] || "application/octet-stream" });
     res.end(data);
   });
+}
+
+function updateBooking(booking, status, extra = {}) {
+  booking.status = status;
+  booking.updatedAt = new Date().toISOString();
+  booking.timeline = Array.isArray(booking.timeline) ? booking.timeline : [];
+  booking.timeline.push({ label: status, at: booking.updatedAt });
+  Object.assign(booking, extra);
 }
 
 async function handleApi(req, res) {
@@ -278,15 +355,16 @@ async function handleApi(req, res) {
   const db = readDb();
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    return sendJson(res, 200, { ok: true, app: "FixIt", privateApi: true });
+    return sendJson(res, 200, { ok: true, app: "FixIt Marketplace" });
   }
 
   if (req.method === "GET" && url.pathname === "/api/bootstrap") {
     return sendJson(res, 200, {
-      workers: db.workers,
+      services,
+      workers: db.workers.filter(w => w.verificationStatus === "verified").map(publicWorker),
       settings: {
         commissionRate: COMMISSION_RATE,
-        upiId: process.env.FIXIT_UPI_ID || "yashdewangan110@okicici",
+        upiId: process.env.FIXIT_UPI_ID || "test@razorpay",
         merchantName: process.env.FIXIT_MERCHANT_NAME || "FixIt",
         razorpayKeyId: RAZORPAY_KEY_ID,
         razorpayEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET)
@@ -294,39 +372,153 @@ async function handleApi(req, res) {
     });
   }
 
-  if (req.method === "POST" && url.pathname === "/api/admin/login") {
-    return requireAdmin(req, res) ? sendJson(res, 200, { ok: true }) : undefined;
-  }
-
-  if (req.method === "GET" && url.pathname === "/api/bookings") {
-    if (!requireAdmin(req, res)) return;
-    return sendJson(res, 200, { bookings: db.bookings });
+  if (req.method === "POST" && url.pathname === "/api/customer/login") {
+    const customer = sanitizeCustomer(await parseBody(req));
+    const index = db.customers.findIndex(c => c.phone === customer.phone);
+    if (index >= 0) db.customers[index] = { ...db.customers[index], ...customer };
+    else db.customers.push(customer);
+    writeDb(db);
+    return sendJson(res, 200, { customer });
   }
 
   if (req.method === "GET" && url.pathname === "/api/customer/bookings") {
-    const phone = String(url.searchParams.get("phone") || "").replace(/[^\d]/g, "").slice(-10);
+    const phone = phone10(url.searchParams.get("phone"));
     if (phone.length !== 10) return sendError(res, 400, "Valid customer phone is required");
-    const bookings = db.bookings.filter(b => String(b.customerPhone || "").slice(-10) === phone);
-    return sendJson(res, 200, { bookings });
+    return sendJson(res, 200, { bookings: db.bookings.filter(b => b.customerPhone === phone) });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/worker/register") {
+    const body = await parseBody(req);
+    const phone = phone10(body.phone);
+    if (db.workerApplications.some(a => a.phone === phone && a.verificationStatus === "pending")) return sendError(res, 409, "Pending application already exists");
+    if (db.workers.some(w => w.phone === phone && w.verificationStatus === "verified")) return sendError(res, 409, "Worker already verified. Login with phone.");
+    const application = makeWorkerApplication(body);
+    db.workerApplications.push(application);
+    writeDb(db);
+    return sendJson(res, 201, { application });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/worker/login") {
+    const body = await parseBody(req);
+    const phone = phone10(body.phone);
+    const worker = db.workers.find(w => w.phone === phone);
+    const application = db.workerApplications.find(a => a.phone === phone);
+    if (!worker && !application) return sendError(res, 404, "No worker account or application found");
+    return sendJson(res, 200, { worker, application });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/worker/dashboard") {
+    const phone = phone10(url.searchParams.get("phone"));
+    const worker = db.workers.find(w => w.phone === phone);
+    const application = db.workerApplications.find(a => a.phone === phone);
+    const bookings = worker ? db.bookings.filter(b => Number(b.workerId) === Number(worker.id)) : [];
+    const reviews = worker ? db.reviews.filter(r => Number(r.workerId) === Number(worker.id)) : [];
+    return sendJson(res, 200, { worker, application, bookings, reviews });
+  }
+
+  if (req.method === "PATCH" && url.pathname === "/api/worker/profile") {
+    const body = await parseBody(req);
+    const phone = phone10(body.phone);
+    const worker = db.workers.find(w => w.phone === phone);
+    if (!worker) return sendError(res, 404, "Verified worker not found");
+    if (body.status) worker.status = ["Online", "Offline", "Busy"].includes(body.status) ? body.status : worker.status;
+    if (body.lat !== undefined && body.lng !== undefined) {
+      worker.lat = Number(body.lat);
+      worker.lng = Number(body.lng);
+    }
+    if (body.area) worker.area = cleanText(body.area, worker.area, 80);
+    if (body.charge) worker.charge = Math.max(50, Math.round(Number(body.charge)));
+    writeDb(db);
+    return sendJson(res, 200, { worker });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/bookings") {
+    const body = await parseBody(req);
+    const worker = db.workers.find(w => Number(w.id) === Number(body.workerId) && w.verificationStatus === "verified");
+    if (!worker) return sendError(res, 404, "Verified worker not found");
+    const customer = sanitizeCustomer(body.customer || {});
+    const existingCustomer = db.customers.findIndex(c => c.phone === customer.phone);
+    if (existingCustomer >= 0) db.customers[existingCustomer] = { ...db.customers[existingCustomer], ...customer };
+    else db.customers.push(customer);
+    const booking = makeBooking(worker, customer, {
+      method: body.paymentMethod === "upi" ? "upi" : body.paymentMethod === "razorpay" ? "razorpay" : "cash",
+      status: body.paymentMethod === "razorpay" ? "paid" : "pending"
+    });
+    db.bookings.push(booking);
+    worker.status = "Busy";
+    writeDb(db);
+    return sendJson(res, 201, { booking });
+  }
+
+  const bookingAction = url.pathname.match(/^\/api\/bookings\/(\d+)\/(accept|start|complete|cancel)$/);
+  if (req.method === "POST" && bookingAction) {
+    const id = Number(bookingAction[1]);
+    const action = bookingAction[2];
+    const body = await parseBody(req);
+    const booking = db.bookings.find(b => Number(b.id) === id);
+    if (!booking) return sendError(res, 404, "Booking not found");
+    const worker = db.workers.find(w => Number(w.id) === Number(booking.workerId));
+    if (body.workerPhone && worker && worker.phone !== phone10(body.workerPhone)) return sendError(res, 403, "This booking is assigned to another worker");
+    if (action === "accept") updateBooking(booking, "accepted");
+    if (action === "start") updateBooking(booking, "on_the_way");
+    if (action === "cancel") updateBooking(booking, "cancelled");
+    if (action === "complete") {
+      updateBooking(booking, "completed", { completedAt: new Date().toISOString() });
+      if (worker) worker.status = "Online";
+      booking.whatsappReviewLink = whatsappReviewLink(req, booking);
+    }
+    writeDb(db);
+    return sendJson(res, 200, { booking, whatsappReviewLink: booking.whatsappReviewLink || "" });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/reviews") {
+    const body = await parseBody(req);
+    const booking = db.bookings.find(b => Number(b.id) === Number(body.bookingId));
+    if (!booking) return sendError(res, 404, "Booking not found");
+    const rating = Math.min(5, Math.max(1, Number(body.rating || 5)));
+    const tags = Array.isArray(body.tags) ? body.tags.map(tag => cleanText(tag, "", 40)).filter(Boolean).slice(0, 6) : [];
+    const review = {
+      id: Date.now(),
+      bookingId: booking.id,
+      workerId: booking.workerId,
+      workerName: booking.workerName,
+      customerPhone: booking.customerPhone,
+      rating,
+      tags,
+      comment: cleanText(body.comment, "", 240),
+      createdAt: new Date().toISOString()
+    };
+    db.reviews.push(review);
+    booking.reviewId = review.id;
+    const workerReviews = db.reviews.filter(r => Number(r.workerId) === Number(booking.workerId));
+    const worker = db.workers.find(w => Number(w.id) === Number(booking.workerId));
+    if (worker) worker.rating = Math.round((workerReviews.reduce((sum, r) => sum + Number(r.rating), 0) / workerReviews.length) * 10) / 10;
+    writeDb(db);
+    return sendJson(res, 201, { review });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/help/chat") {
+    const body = await parseBody(req);
+    const message = cleanText(body.message, "", 280);
+    const reply = message.toLowerCase().includes("refund")
+      ? "Refund ya payment issue ke liye booking ID bhejiye. Admin panel me payment status check karke support karega."
+      : message.toLowerCase().includes("worker")
+        ? "Worker late hai to booking status open kijiye. Worker location aur call option customer booking card par dikh raha hai."
+        : "FixIt support: booking, worker verification, payment, address, ya review ke liye apna phone aur booking detail bhejiye.";
+    const ticket = { id: Date.now(), phone: phone10(body.phone), message, reply, createdAt: new Date().toISOString() };
+    db.helpTickets.push(ticket);
+    writeDb(db);
+    return sendJson(res, 200, { reply, ticket });
   }
 
   if (req.method === "POST" && url.pathname === "/api/create-order") {
-    if (!requireRazorpayKeys(res)) return;
     const body = await parseBody(req);
     try {
-      const payload = razorpayOrderPayload(body);
-      const order = await createRazorpayOrder(payload);
-      return sendJson(res, 201, {
-        order_id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        key_id: RAZORPAY_KEY_ID
-      });
+      const order = await createRazorpayOrder(Number(body.amount), body.receipt);
+      return sendJson(res, 201, { order_id: order.id, amount: order.amount, currency: order.currency, key_id: RAZORPAY_KEY_ID });
     } catch (error) {
-      if (error instanceof RazorpayHttpError) {
-        return sendError(res, error.statusCode === 401 ? 401 : 500, error.message);
-      }
-      return sendError(res, 400, error.message || "Invalid order request");
+      const status = error instanceof RazorpayHttpError && error.statusCode === 401 ? 401 : error instanceof RazorpayHttpError ? 500 : 400;
+      return sendError(res, status, error.message);
     }
   }
 
@@ -335,109 +527,44 @@ async function handleApi(req, res) {
     const orderId = body.razorpay_order_id || body.order_id;
     const paymentId = body.razorpay_payment_id || body.payment_id;
     const signature = body.razorpay_signature || body.signature;
-    if (!orderId || !paymentId || !signature) {
-      return sendError(res, 400, "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required");
-    }
-    if (!verifyRazorpaySignature(orderId, paymentId, signature)) {
-      return sendError(res, 400, "Payment verification failed");
-    }
+    if (!orderId || !paymentId || !signature) return sendError(res, 400, "Payment fields are required");
+    if (!verifyRazorpaySignature(orderId, paymentId, signature)) return sendError(res, 400, "Payment verification failed");
+    return sendJson(res, 200, { ok: true });
+  }
 
-    if (body.workerId) {
-      const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
-      if (!worker) return sendError(res, 404, "Worker not found");
-      const customer = sanitizeCustomer(body.customer || {});
-      const booking = makeBooking(worker, customer, {
-        method: "razorpay",
-        status: "paid",
-        razorpayOrderId: orderId,
-        razorpayPaymentId: paymentId
-      });
-      db.bookings.push(booking);
+  if (req.method === "POST" && url.pathname === "/api/admin/login") {
+    return requireAdmin(req, res) ? sendJson(res, 200, { ok: true }) : undefined;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/admin/dashboard") {
+    if (!requireAdmin(req, res)) return;
+    return sendJson(res, 200, { customers: db.customers, workers: db.workers, workerApplications: db.workerApplications, bookings: db.bookings, reviews: db.reviews, helpTickets: db.helpTickets });
+  }
+
+  const applicationReview = url.pathname.match(/^\/api\/admin\/worker-applications\/(\d+)\/(verify|reject)$/);
+  if (req.method === "POST" && applicationReview) {
+    if (!requireAdmin(req, res)) return;
+    const id = Number(applicationReview[1]);
+    const action = applicationReview[2];
+    const application = db.workerApplications.find(app => Number(app.id) === id);
+    if (!application) return sendError(res, 404, "Worker application not found");
+    if (application.verificationStatus !== "pending") return sendError(res, 400, "Application is already reviewed");
+    if (action === "verify") {
+      application.verificationStatus = "verified";
+      application.status = "Verified";
+      application.reviewedAt = new Date().toISOString();
+      const worker = sanitizeWorkerInput({ ...application, id: Date.now(), status: "Online" }, "verified");
+      db.workers.push(worker);
       writeDb(db);
-      return sendJson(res, 201, { ok: true, booking });
+      return sendJson(res, 200, { worker, application });
     }
-
-    return sendJson(res, 200, { ok: true });
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/payments/razorpay/order") {
-    if (!requireRazorpayKeys(res)) return;
     const body = await parseBody(req);
-    const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
-    if (!worker) return sendError(res, 404, "Worker not found");
-    sanitizeCustomer(body.customer || {});
-    const price = Math.round((worker.charge + (worker.charge * COMMISSION_RATE)) * 100);
-    const receipt = `fixit_${Date.now()}_${worker.id}`;
-    try {
-      const order = await createRazorpayOrder({
-        amount: price,
-        currency: "INR",
-        receipt,
-        notes: {
-          workerId: String(worker.id),
-          service: worker.service
-        }
-      });
-      return sendJson(res, 201, { order, keyId: RAZORPAY_KEY_ID });
-    } catch (error) {
-      if (error instanceof RazorpayHttpError) {
-        return sendError(res, error.statusCode === 401 ? 401 : 500, error.message);
-      }
-      return sendError(res, 500, error.message || "Razorpay order failed");
-    }
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/payments/razorpay/verify") {
-    const body = await parseBody(req);
-    const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
-    if (!worker) return sendError(res, 404, "Worker not found");
-    const customer = sanitizeCustomer(body.customer || {});
-    const payment = body.payment || {};
-    if (!verifyRazorpaySignature(payment.razorpay_order_id, payment.razorpay_payment_id, payment.razorpay_signature)) {
-      return sendError(res, 400, "Payment verification failed");
-    }
-    const booking = makeBooking(worker, customer, {
-      method: "razorpay",
-      status: "paid",
-      razorpayOrderId: payment.razorpay_order_id,
-      razorpayPaymentId: payment.razorpay_payment_id
-    });
-    db.bookings.push(booking);
+    application.verificationStatus = "rejected";
+    application.status = "Rejected";
+    application.reviewedAt = new Date().toISOString();
+    application.rejectionReason = cleanText(body.reason, "Documents could not be verified", 160);
     writeDb(db);
-    return sendJson(res, 201, { booking });
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/bookings") {
-    const body = await parseBody(req);
-    const worker = db.workers.find(w => Number(w.id) === Number(body.workerId));
-    if (!worker) return sendError(res, 404, "Worker not found");
-    const customer = sanitizeCustomer(body.customer || {});
-    const booking = makeBooking(worker, customer, {
-      method: body.paymentMethod === "cash" ? "cash" : "upi",
-      status: body.paymentMethod === "cash" ? "pending" : "initiated"
-    });
-    db.bookings.push(booking);
-    writeDb(db);
-    return sendJson(res, 201, { booking });
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/workers") {
-    if (!requireAdmin(req, res)) return;
-    const worker = sanitizeWorker(await parseBody(req));
-    db.workers.push(worker);
-    writeDb(db);
-    return sendJson(res, 201, { worker });
-  }
-
-  const workerDelete = url.pathname.match(/^\/api\/workers\/(\d+)$/);
-  if (req.method === "DELETE" && workerDelete) {
-    if (!requireAdmin(req, res)) return;
-    const id = Number(workerDelete[1]);
-    const nextWorkers = db.workers.filter(w => Number(w.id) !== id);
-    if (nextWorkers.length === db.workers.length) return sendError(res, 404, "Worker not found");
-    db.workers = nextWorkers;
-    writeDb(db);
-    return sendJson(res, 200, { ok: true });
+    return sendJson(res, 200, { application });
   }
 
   sendError(res, 404, "API route not found");
@@ -445,11 +572,8 @@ async function handleApi(req, res) {
 
 const server = http.createServer(async (req, res) => {
   try {
-    if (req.url.startsWith("/api/")) {
-      await handleApi(req, res);
-    } else {
-      serveStatic(req, res);
-    }
+    if (req.url.startsWith("/api/")) await handleApi(req, res);
+    else serveStatic(req, res);
   } catch (error) {
     sendError(res, 400, error.message || "Request failed");
   }
@@ -457,7 +581,5 @@ const server = http.createServer(async (req, res) => {
 
 ensureDb();
 server.listen(PORT, () => {
-  console.log(`FixIt is running at http://localhost:${PORT}`);
-  console.log("Set FIXIT_API_KEY before publishing. Current key is the development default.");
-  console.log("Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to enable Razorpay Checkout.");
+  console.log(`FixIt Marketplace is running at http://localhost:${PORT}`);
 });

@@ -1,6 +1,18 @@
 # FixIt Live Services
 
-This is a publishable FixIt website with a Node.js backend API, a polished customer frontend, a separate customer panel, a private admin panel, UPI booking, and Razorpay Checkout support.
+This is a publishable FixIt marketplace website with a Node.js backend API, customer login, worker login, worker verification, incoming booking workflow, admin panel, UPI booking, Razorpay Checkout support, WhatsApp review links, and AI-style help chat.
+
+## Main flows
+
+- Customers can search verified workers and book home services.
+- Customers get a panel with Home, Profile, Address, App Settings, and Help & Support.
+- Workers can register themselves with photo and ID proof, then login after verification.
+- Workers get verification steps, personal details, dashboard stats, and incoming bookings.
+- Admin can verify or reject worker applications.
+- Only verified workers become visible to customers.
+- Admin can track customers, bookings, payment status, worker fleet, reviews, help tickets, and application queue.
+- When a worker marks a job complete, the app opens a WhatsApp review message link for the customer.
+- Customer reviews support 1-5 stars and tags like Good behaviour and Excellent service.
 
 ## Run locally
 
@@ -24,6 +36,8 @@ npm start
 ```
 
 Use the same key in the app's Admin screen to view private bookings, add workers, or delete workers.
+
+Admin also uses this key to verify worker applications.
 
 ## Optional payment settings
 
@@ -78,3 +92,9 @@ PORT=3000
 ```
 
 Data is stored in `data/db.json`. For a high-traffic production app, replace this file storage with a managed database.
+
+Uploaded worker photos and ID files are stored in `public/uploads`. In production, use cloud storage for these documents and protect ID files behind admin authentication.
+
+## Important production note
+
+The WhatsApp review message is opened as a WhatsApp link after the worker marks the job complete. To send WhatsApp messages automatically without a click, you need the official WhatsApp Business API and an approved message template.

@@ -8,9 +8,9 @@ echo -----------------------
 echo Paste your Razorpay TEST keys below.
 echo.
 
-RAZORPAY_KEY_ID=your_key
-RAZORPAY_KEY_SECRET=your_secret
-FIXIT_API_KEY=12345
+set /p RAZORPAY_KEY_ID=RAZORPAY_KEY_ID: 
+set /p RAZORPAY_KEY_SECRET=RAZORPAY_KEY_SECRET: 
+set /p FIXIT_API_KEY=Admin password / FIXIT_API_KEY: 
 
 if "%FIXIT_API_KEY%"=="" set FIXIT_API_KEY=12345
 
