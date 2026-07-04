@@ -3,1348 +3,689 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FixIt — Home Services Marketplace</title>
+<title>FixIt — Dispatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
-  --bg:#f7f8fa;--paper:#ffffff;--ink:#0d1117;--muted:#6b7280;
-  --line:#e5e7eb;--brand:#1a6b47;--brand2:#22c55e;--brand-bg:#f0fdf4;
-  --red:#dc2626;--amber:#d97706;--blue:#2563eb;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
-  --shadow:0 4px 24px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
-  --shadow-lg:0 20px 60px rgba(0,0,0,.1);
-  --radius:10px;--radius-lg:16px;
+  --ink:#141a1f; --muted:#5c6672; --line:#dbe1e2; --paper:#fff; --wash:#eef1ef;
+  --navy:#0e2236; --navy2:#123049; --amber:#f2a71b; --amber-ink:#7a4c00;
+  --teal:#0f7a6c; --teal-wash:#e6f5f1; --red:#c8322b; --red-wash:#fdecea;
+  --shadow:0 18px 44px rgba(14,34,54,.14); --display:"Barlow Condensed",sans-serif; --mono:"JetBrains Mono",monospace;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer;border:none;background:none}
-a{color:inherit;text-decoration:none}
-img{display:block;max-width:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--wash);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
+.mono{font-family:var(--mono)}
 
-/* NAV */
-.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm)}
-.nav-inner{max-width:1240px;margin:auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
-.logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--ink)}
-.logo-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:white;display:grid;place-items:center;font-size:16px;font-weight:800;flex-shrink:0}
-.nav-tabs{display:flex;gap:2px;background:#f3f4f6;border-radius:9px;padding:3px;margin-left:auto}
-.nav-tabs button{border-radius:7px;padding:6px 14px;font-size:13px;font-weight:700;color:var(--muted);transition:all .15s}
-.nav-tabs button.active{background:white;color:var(--ink);box-shadow:var(--shadow-sm)}
-.nav-status{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
-.nav-status.live{color:var(--brand)}
+/* ---- top bar ---- */
+.top{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--line);background:rgba(255,255,255,.94);backdrop-filter:blur(14px)}
+.topin{max-width:1280px;margin:auto;padding:13px 22px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center;font-family:var(--display);font-size:26px;font-weight:900;cursor:pointer;letter-spacing:.01em}
+.mark{width:38px;height:38px;display:grid;place-items:center;border-radius:6px;background:var(--navy);color:var(--amber);font-family:var(--mono);font-weight:700;font-size:13px}
+.tabs{display:flex;gap:6px;padding:5px;border:1px solid var(--line);border-radius:8px;background:#f8fafc}
+.tabs button{border:0;border-radius:6px;background:transparent;color:var(--muted);font-weight:800;min-height:36px;padding:0 14px;font-size:14px}
+.tabs button.active{background:var(--navy);color:#fff}
+.sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:#9aa4ad}
+.dot.live{background:var(--teal);box-shadow:0 0 0 4px var(--teal-wash);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(15,122,108,.4)}70%{box-shadow:0 0 0 8px rgba(15,122,108,0)}100%{box-shadow:0 0 0 0 rgba(15,122,108,0)}}
+.screen{display:none}
+.screen.active{display:block}
+.wrap{max-width:1280px;margin:auto;padding:26px 22px 60px}
 
-/* SCREENS */
-.screen{display:none}.screen.active{display:block}
-.wrap{max-width:1240px;margin:auto;padding:28px 24px 64px}
+/* ---- landing / dispatch board ---- */
+.dispatchHero{border-radius:10px;background:var(--navy);color:#fff;padding:clamp(30px,5vw,58px);position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.dispatchHero::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(115deg,rgba(242,167,27,.07) 0 2px,transparent 2px 34px),
+  radial-gradient(circle at 82% 18%,rgba(242,167,27,.16),transparent 55%)}
+.dispatchHero>*{position:relative}
+.eyebrow{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.dispatchHero h1{font-size:clamp(40px,6.4vw,76px);line-height:.94;margin:14px 0 10px;font-weight:900}
+.dispatchHero .lead{font-size:18px;line-height:1.55;color:rgba(255,255,255,.82);max-width:600px;font-family:Inter}
+.liveStrip{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;padding-top:20px;border-top:1px dashed rgba(255,255,255,.22)}
+.liveStrip div strong{display:block;font-family:var(--mono);font-size:26px;color:var(--amber)}
+.liveStrip div span{font-size:12px;color:rgba(255,255,255,.68);text-transform:uppercase;letter-spacing:.05em}
 
-/* HERO */
-.hero{border-radius:var(--radius-lg);background:linear-gradient(130deg,#0d2b1d 0%,#1a5c38 50%,#14532d 100%);color:white;padding:56px 60px;position:relative;overflow:hidden;margin-bottom:24px}
-.hero::before{content:'';position:absolute;right:-60px;top:-60px;width:400px;height:400px;border-radius:50%;background:rgba(34,197,94,.1)}
-.hero::after{content:'';position:absolute;right:100px;bottom:-80px;width:250px;height:250px;border-radius:50%;background:rgba(34,197,94,.06)}
-.hero-eye{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:12px}
-.hero h1{font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:800;line-height:1.05;margin-bottom:16px;letter-spacing:-1px;position:relative}
-.hero-lead{font-size:16px;color:rgba(255,255,255,.75);max-width:520px;margin-bottom:28px;position:relative}
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;position:relative}
-.hero-metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:40px;position:relative}
-.hero-metric{background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:18px}
-.hero-metric strong{display:block;font-family:'Syne',sans-serif;font-size:30px;font-weight:800}
-.hero-metric span{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
+.ticketRow{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:26px}
+.ticket{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:8px 8px 0 0;padding:26px 24px 30px;box-shadow:var(--shadow);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
+.ticket:hover{transform:translateY(-5px);box-shadow:0 24px 54px rgba(14,34,54,.2)}
+.ticket::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:15px;
+  background-image:radial-gradient(circle at 8px 0,transparent 7px,var(--wash) 7.5px);
+  background-size:16px 16px;background-repeat:repeat-x}
+.stamp{position:absolute;top:20px;right:20px;width:64px;height:64px;border:2.5px dashed currentColor;border-radius:50%;
+  display:grid;place-items:center;transform:rotate(-9deg);font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.03em;text-align:center;line-height:1.2;opacity:.85}
+.ticket.cust .stamp,.ticket.cust .code{color:var(--teal)}
+.ticket.work .stamp,.ticket.work .code{color:var(--amber-ink)}
+.ticket.adm .stamp,.ticket.adm .code{color:var(--navy)}
+.tIcon{width:44px;height:44px;border-radius:7px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:900;font-family:var(--mono);font-size:14px;margin-bottom:16px}
+.ticket h3{font-size:28px;margin:0 0 6px;font-weight:800}
+.code{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:10px;display:block}
+.ticket p{color:var(--muted);line-height:1.55;font-size:14.5px;margin:0 0 18px;min-height:64px}
+.barcode{display:flex;gap:2px;align-items:flex-end;height:22px;margin-bottom:16px;opacity:.55}
+.barcode span{display:block;width:3px;background:var(--ink)}
+.ticket .go{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:14px}
+.ticket .go em{font-style:normal;background:var(--wash);border-radius:5px;padding:6px 11px;font-size:13px}
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;height:40px;border-radius:var(--radius);font-weight:700;font-size:14px;transition:all .15s;white-space:nowrap}
-.btn-lg{height:48px;padding:0 24px;font-size:15px}
-.btn-sm{height:34px;padding:0 12px;font-size:13px}
-.btn-primary{background:var(--brand);color:white}.btn-primary:hover{background:#166438}
-.btn-white{background:white;color:var(--ink)}.btn-white:hover{background:#f9fafb}
-.btn-dark{background:var(--ink);color:white}.btn-dark:hover{background:#1f2937}
-.btn-ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}.btn-ghost:hover{background:var(--brand-bg)}
-.btn-soft{background:var(--brand-bg);color:var(--brand)}.btn-soft:hover{background:#dcfce7}
-.btn-danger{background:#fef2f2;color:var(--red)}.btn-danger:hover{background:#fee2e2}
-.btn-amber{background:#fffbeb;color:var(--amber)}.btn-amber:hover{background:#fef3c7}
-.btn-blue{background:#eff6ff;color:var(--blue)}.btn-blue:hover{background:#dbeafe}
-.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
-.btn-block{width:100%}
-
-/* SECTION / CARD */
-.section{background:white;border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
-.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
-.section-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
-.section-sub{font-size:13px;color:var(--muted);margin-top:2px}
-.card{background:white;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
-.card+.card{margin-top:10px}
-
-/* FORM */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.field input,.field select,.field textarea{width:100%;height:42px;border:1.5px solid var(--line);border-radius:var(--radius);padding:0 12px;background:white;outline:none;transition:border .15s}
-.field textarea{height:80px;padding:10px 12px;resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(26,107,71,.12)}
-.field input.err,.field select.err{border-color:var(--red)}
-
-/* SERVICE CHIPS */
-.service-chips{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-.chip{border:1.5px solid var(--line);border-radius:var(--radius);background:white;padding:14px 12px;text-align:left;transition:all .15s;cursor:pointer}
-.chip:hover{border-color:var(--brand);background:var(--brand-bg)}
-.chip.active{border-color:var(--brand);background:var(--brand-bg)}
-.chip-icon{width:36px;height:36px;border-radius:8px;background:var(--ink);color:white;display:grid;place-items:center;font-size:11px;font-weight:800;margin-bottom:10px}
-.chip.active .chip-icon{background:var(--brand)}
-.chip-name{font-size:13px;font-weight:700;display:block;margin-bottom:3px}
-.chip-count{font-size:11px;color:var(--muted)}
-
-/* WORKER GRID */
-.worker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.worker-card{background:white;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-sm);transition:all .2s}
-.worker-card:hover{border-color:var(--brand);box-shadow:var(--shadow)}
-.worker-head{display:flex;gap:12px;align-items:flex-start}
-.worker-avatar{width:52px;height:52px;border-radius:10px;background:var(--brand-bg);color:var(--brand);display:grid;place-items:center;font-weight:800;font-size:14px;flex-shrink:0;overflow:hidden;border:2px solid var(--line)}
-.worker-avatar img{width:100%;height:100%;object-fit:cover}
-.worker-name{font-weight:800;font-size:15px}
-.worker-meta{font-size:12px;color:var(--muted);margin-top:2px}
-.worker-exp{font-size:13px;color:var(--muted);line-height:1.5;flex:1}
-.worker-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto}
-.price-label{font-size:11px;color:var(--muted);font-weight:500}
-.price-value{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--brand)}
-
-/* TAGS / BADGES */
-.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:700;background:#f3f4f6;color:#374151}
-.tag-green{background:#dcfce7;color:#166534}
-.tag-amber{background:#fef3c7;color:#92400e}
-.tag-blue{background:#dbeafe;color:#1d4ed8}
-.tag-red{background:#fee2e2;color:#991b1b}
-.tag-muted{background:#f3f4f6;color:#6b7280}
-
-/* SEARCH ROW */
-.search-row{display:flex;gap:10px;align-items:center}
-.search-input{height:40px;border:1.5px solid var(--line);border-radius:var(--radius);padding:0 12px;outline:none;background:white;flex:1;font-size:14px}
-.search-input:focus{border-color:var(--brand)}
-.search-select{height:40px;border:1.5px solid var(--line);border-radius:var(--radius);padding:0 10px;outline:none;background:white;font-size:14px}
-
-/* LAYOUT GRIDS */
-.grid-2col{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-
-/* STATS */
-.stat-box{background:white;border:1.5px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm)}
-.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
-.stat-label{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500}
-
-/* SIDEBAR MENU */
-.sidebar{display:flex;flex-direction:column;gap:4px}
-.sidebar-btn{width:100%;text-align:left;padding:10px 14px;border-radius:var(--radius);font-size:14px;font-weight:600;color:var(--muted);transition:all .15s;background:transparent;display:flex;align-items:center;gap:10px}
-.sidebar-btn:hover{background:var(--bg);color:var(--ink)}
-.sidebar-btn.active{background:var(--brand-bg);color:var(--brand)}
-.sidebar-icon{font-size:16px;width:20px;text-align:center}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
-.modal-overlay.open{display:flex}
-.modal-box{background:white;border-radius:var(--radius-lg);width:min(840px,100%);max-height:92vh;overflow:auto;box-shadow:var(--shadow-lg)}
-.modal-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-.modal-head h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}
-.modal-body{padding:24px}
-
-/* BOOKING SUMMARY */
-.summary-box{background:var(--ink);color:white;border-radius:var(--radius);padding:16px}
-.sum-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:rgba(255,255,255,.7)}
-.sum-row.total{border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:12px;color:white;font-weight:800;font-size:17px}
-
-/* MAP PLACEHOLDER */
-.map-box{height:160px;border-radius:var(--radius);border:1.5px solid var(--line);background:linear-gradient(135deg,#e8f5e9,#e3f2fd);position:relative;overflow:hidden;margin:12px 0}
-.map-pin{position:absolute;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%)}
-.map-pin-customer{background:var(--red);box-shadow:0 0 0 6px rgba(220,38,38,.15)}
-.map-pin-worker{background:var(--brand);box-shadow:0 0 0 6px rgba(26,107,71,.15)}
-.map-route{position:absolute;left:22%;top:55%;right:25%;height:0;border-top:2px dashed rgba(0,0,0,.25);transform:rotate(-10deg)}
-.map-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);background:white;padding:3px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
-
-/* CHAT */
-.chat-box{height:220px;overflow-y:auto;border:1.5px solid var(--line);border-radius:var(--radius);padding:12px;background:#fafafa;display:flex;flex-direction:column;gap:8px}
-.chat-msg{max-width:78%;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.5}
-.chat-msg.bot{background:white;border:1px solid var(--line);align-self:flex-start}
-.chat-msg.me{background:var(--brand);color:white;align-self:flex-end}
-
-/* STEPS */
-.steps{display:flex;flex-direction:column;gap:8px}
-.step-item{display:flex;align-items:center;gap:12px;padding:12px;background:white;border:1.5px solid var(--line);border-radius:var(--radius)}
-.step-num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex-shrink:0;background:#f3f4f6;color:var(--muted)}
-.step-num.done{background:var(--brand);color:white}
-.step-label{flex:1;font-size:13px;font-weight:600}
-
-/* TOAST */
-.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:500;display:none;background:var(--ink);color:white;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);max-width:90vw;text-align:center}
+.panel{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:8px;background:var(--paper);box-shadow:0 10px 28px rgba(16,24,40,.06)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.title{font-size:24px;font-weight:800;margin:0}
+.sub,.muted{color:var(--muted);line-height:1.45;font-size:14px}
+.btn{min-height:43px;border:0;border-radius:7px;padding:0 16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:14px}
+.primary{background:var(--teal);color:#fff}
+.dark{background:var(--navy);color:#fff}
+.amberBtn{background:var(--amber);color:var(--amber-ink)}
+.soft{background:var(--teal-wash);color:#0b5f59}
+.danger{background:var(--red-wash);color:var(--red)}
+.warn{background:#fff7e6;color:#9a6700}
+.light{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.grid2{display:grid;grid-template-columns:300px 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.field{margin-bottom:12px}
+.field label{display:block;margin-bottom:7px;color:var(--muted);font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select,.field textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:7px;padding:11px 12px;outline:0;background:#fff}
+.field textarea{min-height:80px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,122,108,.13)}
+.chips{display:grid;grid-template-columns:repeat(6,minmax(112px,1fr));gap:12px}
+.chip{min-height:86px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:left;padding:14px}
+.chip.active{background:var(--teal-wash);border-color:var(--teal)}
+.icon{width:32px;height:32px;border-radius:6px;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;margin-bottom:9px;font-family:var(--mono)}
+.worker{min-height:320px;padding:17px;display:flex;flex-direction:column}
+.row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.avatar{width:56px;height:56px;border-radius:8px;background:var(--teal-wash);color:#0b5f59;overflow:hidden;display:grid;place-items:center;font-weight:800;flex:0 0 auto;font-family:var(--mono)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.name{font-weight:800}
+.meta{font-size:13px;color:var(--muted);line-height:1.45}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}
+.tag{min-height:25px;border-radius:999px;padding:5px 10px;background:#f2f4f7;color:#344054;font-size:11.5px;font-weight:800}
+.green{background:#ecfdf3;color:#087443}
+.amber{background:#fff7df;color:#9a6700}
+.blue{background:#eff6ff;color:#2459d6}
+.exp{flex:1;color:var(--muted);line-height:1.5;font-size:14px}
+.foot{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:15px}
+.price{font-size:19px;font-weight:900;color:#0b5f59;font-family:var(--mono)}
+.drawer{padding:15px;display:grid;gap:8px;align-content:start;border:1px solid var(--line);border-radius:8px;background:#fff}
+.menuBtn{width:100%;justify-content:flex-start}
+.list{display:grid;gap:12px}
+.card{padding:16px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.statusLine{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:14px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}
+.stat strong{display:block;font-size:23px;font-family:var(--mono)}
+.empty{border:1px dashed var(--line);border-radius:8px;padding:24px;text-align:center;color:var(--muted);font-weight:700}
+.chatBox{height:250px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfcfd}
+.chatMsg{margin-bottom:10px;padding:10px 12px;border-radius:8px;background:#fff}
+.chatMsg.me{background:var(--teal-wash)}
+.hamb{display:none}
+.toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:200;display:none;max-width:min(92vw,580px);border-radius:999px;background:var(--navy);color:#fff;padding:12px 18px;font-weight:800;box-shadow:var(--shadow)}
 .toast.show{display:block}
 
-/* EMPTY */
-.empty{border:2px dashed var(--line);border-radius:var(--radius);padding:32px;text-align:center;color:var(--muted);font-size:14px;font-weight:500}
+/* live map + tracking */
+.mapBox{height:320px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.mapBoxSm{height:190px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.trackHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.trackStats{display:flex;gap:18px}
+.trackStats div strong{display:block;font-family:var(--mono);font-size:20px}
+.trackStats div span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.vanIcon{background:var(--amber);color:var(--amber-ink);border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:15px;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.pinIcon{background:var(--red);color:#fff;border-radius:50% 50% 50% 0;width:26px;height:26px;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.pinIcon span{transform:rotate(45deg);font-size:12px}
+.shareBar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:8px;background:var(--navy);color:#fff;margin-bottom:16px;flex-wrap:wrap}
+.shareBar .left{display:flex;align-items:center;gap:10px}
+.toggle{position:relative;width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,.25);border:0;flex:0 0 auto}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease}
+.toggle.on{background:var(--teal)}
+.toggle.on::after{transform:translateX(20px)}
 
-/* INLINE ROW */
-.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
-.row.wrap{flex-wrap:wrap}
-.gap-row{display:flex;gap:10px;align-items:center}
-.divider{border:none;border-top:1px solid var(--line);margin:18px 0}
-.muted{color:var(--muted)}
-.bold{font-weight:700}
-.small{font-size:13px}
+.modalCover{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(9,13,18,.62)}
+.modalCover.open{display:flex}
+.modal{width:min(860px,100%);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:var(--shadow)}
+.modalHead{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.modalBody{padding:20px}
+.summary{border-radius:8px;background:var(--navy);color:#fff;padding:16px}
+.sum{display:flex;justify-content:space-between;padding:8px 0;color:rgba(255,255,255,.78);font-size:14px}
+.sum.total{border-top:1px solid rgba(255,255,255,.18);margin-top:8px;padding-top:14px;color:#fff;font-weight:900;font-size:20px;font-family:var(--mono)}
 
-/* VERIFICATION STATUS BANNER */
-.verify-banner{border-radius:var(--radius);padding:14px 16px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.verify-banner.pending{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
-.verify-banner.verified{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
-.verify-banner.rejected{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
-
-/* BOOKING CARD */
-.booking-card{background:white;border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
-.booking-service{font-weight:800;font-size:15px}
-.booking-meta{font-size:12px;color:var(--muted);margin-top:2px}
-.booking-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-
-/* ADMIN WORKER APP CARD */
-.app-card{border:1.5px solid var(--line);border-radius:var(--radius-lg);padding:16px;background:white;margin-bottom:10px}
-.app-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
-.app-info{flex:1}
-.app-name{font-weight:800;font-size:15px}
-.app-sub{font-size:12px;color:var(--muted)}
-.app-docs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.app-actions{display:flex;gap:8px}
-
-/* MOBILE */
-.hamb{display:none}
-@media(max-width:960px){
-  .worker-grid{grid-template-columns:repeat(2,1fr)}
-  .service-chips{grid-template-columns:repeat(3,1fr)}
-  .grid-4{grid-template-columns:repeat(2,1fr)}
-  .hero{padding:36px 28px}
-}
-@media(max-width:640px){
-  .nav-inner{padding:0 16px}
-  .nav-tabs button{padding:6px 10px;font-size:12px}
-  .wrap{padding:16px 14px 48px}
-  .hero{padding:28px 20px}
-  .hero h1{font-size:28px}
-  .worker-grid{grid-template-columns:1fr}
-  .service-chips{grid-template-columns:repeat(2,1fr)}
-  .grid-2col{grid-template-columns:1fr}
-  .grid-2{grid-template-columns:1fr}
-  .grid-3{grid-template-columns:1fr}
-  .grid-4{grid-template-columns:repeat(2,1fr)}
-  .hero-metrics{grid-template-columns:1fr 1fr}
-  .sidebar{display:none}.sidebar.open{display:flex}
-  .hamb{display:inline-flex}
-  .modal-body{padding:16px}
-}
+@media(max-width:940px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:repeat(2,1fr)}.chips{grid-template-columns:repeat(3,1fr)}.statusLine{grid-template-columns:repeat(2,1fr)}.ticketRow{grid-template-columns:1fr}}
+@media(max-width:640px){.topin{align-items:stretch;flex-direction:column}.tabs{display:grid;grid-template-columns:repeat(4,1fr)}.wrap{padding:16px 14px 40px}.grid3,.chips,.statusLine{grid-template-columns:1fr}.head,.foot{align-items:stretch;flex-direction:column}.drawer{display:none}.drawer.open{display:grid}.hamb{display:inline-flex}.liveStrip{gap:16px}}
 </style>
 </head>
 <body>
-
 <div id="toast" class="toast"></div>
+<header class="top"><div class="topin">
+  <div class="brand" onclick="show('landing')"><span class="mark">FI</span>FixIt</div>
+  <nav class="tabs">
+    <button id="tabLanding" class="active" onclick="show('landing')">Dispatch</button>
+    <button id="tabCustomer" onclick="show('customer')">Customer</button>
+    <button id="tabWorker" onclick="show('worker')">Worker</button>
+    <button id="tabAdmin" onclick="show('admin')">Admin</button>
+  </nav>
+  <div class="sync"><span id="syncDot" class="dot"></span><span id="sync">Connecting</span></div>
+</div></header>
 
-<!-- NAV -->
-<header class="nav">
-  <div class="nav-inner">
-    <div class="logo">
-      <div class="logo-icon">FI</div>
-      FixIt
+<!-- ============ LANDING / DISPATCH BOARD ============ -->
+<main id="landing" class="screen active"><div class="wrap">
+  <section class="dispatchHero">
+    <div class="eyebrow">FixIt Dispatch · Ambikapur</div>
+    <h1>Three desks. One dispatch board.</h1>
+    <p class="lead">Every job on FixIt moves through three desks: a customer raises it, a verified worker runs it, and admin keeps the books straight. Pick your desk to open its console.</p>
+    <div class="liveStrip">
+      <div><strong id="mWorkers">0</strong><span>Workers on the board</span></div>
+      <div><strong id="mOnline">0</strong><span>Online right now</span></div>
+      <div><strong id="mBookings">0</strong><span>Jobs dispatched</span></div>
     </div>
-    <nav class="nav-tabs">
-      <button id="tabHome" class="active" onclick="show('home')">Home</button>
-      <button id="tabCustomer" onclick="show('customer')">Customer</button>
-      <button id="tabWorker" onclick="show('worker')">Worker</button>
-      <button id="tabAdmin" onclick="show('admin')">Admin</button>
-    </nav>
-    <div id="syncStatus" class="nav-status">Connecting…</div>
+  </section>
+
+  <div class="ticketRow">
+    <article class="ticket cust" onclick="show('customer')">
+      <div class="stamp">CUST<br>DESK</div>
+      <div class="tIcon">01</div>
+      <span class="code">TICKET · CUSTOMER</span>
+      <h3>Book a worker</h3>
+      <p>Browse verified electricians, plumbers, carpenters and more. Book in a tap and watch your worker's live location on the map until they arrive.</p>
+      <div class="barcode">
+        <span style="height:100%;width:3px"></span><span style="height:60%"></span><span style="height:90%"></span><span style="height:40%"></span><span style="height:80%"></span><span style="height:55%"></span><span style="height:95%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:50%"></span>
+      </div>
+      <div class="go">Open customer app <em>&rarr;</em></div>
+    </article>
+
+    <article class="ticket work" onclick="show('worker')">
+      <div class="stamp">WORK<br>DESK</div>
+      <div class="tIcon">02</div>
+      <span class="code">TICKET · WORKER</span>
+      <h3>Take jobs</h3>
+      <p>Register, get verified, go online and share your live location so customers can track you en route. Accept, start, and close out jobs from here.</p>
+      <div class="barcode">
+        <span style="height:80%"></span><span style="height:45%"></span><span style="height:100%"></span><span style="height:60%"></span><span style="height:30%"></span><span style="height:75%"></span><span style="height:50%"></span><span style="height:90%"></span><span style="height:40%"></span><span style="height:65%"></span>
+      </div>
+      <div class="go">Open worker app <em>&rarr;</em></div>
+    </article>
+
+    <article class="ticket adm" onclick="show('admin')">
+      <div class="stamp">ADMIN<br>DESK</div>
+      <div class="tIcon">03</div>
+      <span class="code">TICKET · ADMIN</span>
+      <h3>Run the board</h3>
+      <p>Verify new worker applications, watch every worker's live position on one map, and keep an eye on bookings, payouts and reviews.</p>
+      <div class="barcode">
+        <span style="height:55%"></span><span style="height:90%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:100%"></span><span style="height:45%"></span><span style="height:60%"></span><span style="height:80%"></span><span style="height:30%"></span><span style="height:95%"></span>
+      </div>
+      <div class="go">Open admin console <em>&rarr;</em></div>
+    </article>
   </div>
-</header>
 
-<!-- ======== HOME ======== -->
-<main id="home" class="screen active">
-  <div class="wrap">
+  <section class="panel"><div class="head"><div><h2 class="title">Who's on the board right now</h2><div class="sub">A quick look before you pick a desk. Book from the Customer desk.</div></div></div><div id="workersPreview" class="grid3"></div></section>
+</div></main>
 
-    <div class="hero">
-      <div class="hero-eye">Professional Home Services</div>
-      <h1>Verified Workers.<br>Doorstep Service.</h1>
-      <p class="hero-lead">Book trusted electricians, plumbers, carpenters and more in Ambikapur and nearby areas. Fast booking, transparent pricing.</p>
-      <div class="hero-actions">
-        <button class="btn btn-white btn-lg" onclick="show('customer')">Book a Service</button>
-        <button class="btn btn-ghost btn-lg" style="border-color:rgba(255,255,255,.4);color:white" onclick="show('worker')">Join as Worker</button>
+<!-- ============ CUSTOMER ============ -->
+<main id="customer" class="screen"><div class="wrap grid2">
+  <aside class="drawer open" id="custMenu">
+    <button class="btn soft menuBtn" onclick="custSection('custBrowse')">Book a worker</button>
+    <button class="btn soft menuBtn" onclick="custSection('custHome')">My bookings & tracking</button>
+    <button class="btn soft menuBtn" onclick="custSection('custProfile')">Profile</button>
+    <button class="btn soft menuBtn" onclick="custSection('custAddress')">Address</button>
+    <button class="btn soft menuBtn" onclick="custSection('custSettings')">App settings</button>
+    <button class="btn soft menuBtn" onclick="custSection('custHelp')">Help & support</button>
+  </aside>
+  <section class="panel" style="margin-top:0">
+    <div class="head"><div><h2 class="title">Customer desk</h2><div class="sub">Login with phone, book a verified worker, and track them live on the map.</div></div><button class="btn soft hamb" onclick="toggleCustMenu()">Menu</button></div>
+
+    <div id="custBrowse" class="custSec">
+      <div class="field"><label>Name</label><input id="cName" placeholder="Your name"></div>
+      <div class="field"><label>Phone</label><input id="cPhone" maxlength="10" placeholder="10 digit phone"></div>
+      <button class="btn primary" onclick="customerLogin()">Login / Save</button>
+      <div class="panel" style="padding:0;border:0;box-shadow:none;margin-top:18px">
+        <div class="head"><div><h3 class="title" style="font-size:20px">Services</h3></div></div>
+        <div id="services" class="chips"></div>
       </div>
-      <div class="hero-metrics">
-        <div class="hero-metric"><strong id="mWorkers">0</strong><span>Verified Workers</span></div>
-        <div class="hero-metric"><strong id="mBookings">0</strong><span>Bookings Done</span></div>
+      <div class="panel" style="padding:0;border:0;box-shadow:none;margin-top:6px">
+        <div class="head"><div><h3 class="title" style="font-size:20px">Verified workers</h3><div class="sub" id="workerSub">Showing all.</div></div><div class="row"><input id="search" placeholder="Search service, worker, area" oninput="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px;padding:0 10px"><select id="area" onchange="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px"></select></div></div>
+        <div id="workers" class="grid3"></div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div>
-          <div class="section-title">Our Services</div>
-          <div class="section-sub">Select a category to filter workers</div>
-        </div>
-      </div>
-      <div id="serviceChips" class="service-chips"></div>
+    <div id="custHome" class="custSec" style="display:none">
+      <div id="custBookings" class="list"></div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div>
-          <div class="section-title">Available Workers</div>
-          <div class="section-sub" id="workerSubTitle">Showing all verified workers</div>
-        </div>
-        <div class="search-row">
-          <input id="searchInput" class="search-input" placeholder="Search name, service, area…" oninput="renderWorkers()">
-          <select id="areaFilter" class="search-select" onchange="renderWorkers()"></select>
-        </div>
-      </div>
-      <div id="workerGrid" class="worker-grid"></div>
+    <div id="custProfile" class="custSec" style="display:none">
+      <div class="field"><label>Name</label><input id="cProfileName"></div>
+      <div class="field"><label>Phone</label><input id="cProfilePhone" maxlength="10"></div>
+      <button class="btn primary" onclick="customerLogin(true)">Update profile</button>
     </div>
+    <div id="custAddress" class="custSec" style="display:none">
+      <div class="field"><label>Address</label><textarea id="cAddress" placeholder="House, street, landmark"></textarea></div>
+      <div class="field"><label>City</label><input id="cCity" value="Ambikapur"></div>
+      <button class="btn primary" onclick="customerLogin(true)">Save address</button>
+    </div>
+    <div id="custSettings" class="custSec" style="display:none">
+      <div class="card"><div class="row"><div><b>Notifications</b><div class="meta">Booking updates and review reminders.</div></div><input id="cNotify" type="checkbox" checked></div></div>
+    </div>
+    <div id="custHelp" class="custSec" style="display:none">
+      <div class="chatBox" id="chatBox"></div>
+      <div class="row" style="margin-top:10px"><input id="chatInput" placeholder="Ask about booking, worker, refund..."><button class="btn dark" onclick="sendHelp()">Send</button></div>
+    </div>
+  </section>
+</div></main>
 
-  </div>
-</main>
-
-<!-- ======== CUSTOMER ======== -->
-<main id="customer" class="screen">
-  <div class="wrap">
-    <div class="grid-2col">
-
+<!-- ============ WORKER ============ -->
+<main id="worker" class="screen"><div class="wrap">
+  <section class="panel"><div class="head"><div><h2 class="title">Worker desk</h2><div class="sub">Register, get verified, go online, and share your live location.</div></div></div>
+    <div class="grid2">
       <div>
-        <div class="section" style="padding:16px">
-          <button class="hamb btn btn-soft btn-sm btn-block" onclick="toggleCustMenu()" style="margin-bottom:12px">☰ Menu</button>
-          <div id="custSidebar" class="sidebar">
-            <button class="sidebar-btn active" onclick="custNav('custHome')"><span class="sidebar-icon">🏠</span>My Bookings</button>
-            <button class="sidebar-btn" onclick="custNav('custProfile')"><span class="sidebar-icon">👤</span>Profile</button>
-            <button class="sidebar-btn" onclick="custNav('custAddress')"><span class="sidebar-icon">📍</span>Address</button>
-            <button class="sidebar-btn" onclick="custNav('custSettings')"><span class="sidebar-icon">⚙️</span>Settings</button>
-            <button class="sidebar-btn" onclick="custNav('custHelp')"><span class="sidebar-icon">💬</span>Help & Support</button>
-          </div>
-        </div>
+        <h3>Login</h3>
+        <div class="field"><label>Worker phone</label><input id="wLoginPhone" maxlength="10"></div>
+        <button class="btn dark" onclick="workerLogin()">Login</button>
+        <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+        <h3>New worker registration</h3>
+        <div class="field"><label>Name</label><input id="rName"></div>
+        <div class="field"><label>Phone</label><input id="rPhone" maxlength="10"></div>
+        <div class="field"><label>Service</label><select id="rService"></select></div>
+        <div class="field"><label>Area</label><input id="rArea" value="Ambikapur"></div>
+        <div class="field"><label>Charge</label><input id="rCharge" type="number" placeholder="300"></div>
+        <div class="field"><label>Experience</label><textarea id="rExp"></textarea></div>
+        <div class="field"><label>Photo</label><input id="rPhoto" type="file" accept="image/png,image/jpeg,image/webp"></div>
+        <div class="field"><label>ID proof</label><input id="rId" type="file" accept="image/png,image/jpeg,image/webp,application/pdf"></div>
+        <button class="btn primary" onclick="workerRegister()">Submit for verification</button>
       </div>
-
       <div>
-        <!-- LOGIN PANEL (shown when not logged in) -->
-        <div id="custLoginPanel" class="section">
-          <div class="section-head">
-            <div>
-              <div class="section-title">Customer Login</div>
-              <div class="section-sub">Enter your name and phone to continue</div>
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label>Full Name</label><input id="cName" placeholder="Your name"></div>
-            <div class="field"><label>Phone Number</label><input id="cPhone" maxlength="10" placeholder="10-digit mobile"></div>
-          </div>
-          <button class="btn btn-primary btn-lg" onclick="customerLogin()">Login / Register</button>
-          <p class="small muted" style="margin-top:10px">We'll save your details for faster bookings.</p>
+        <div class="shareBar">
+          <div class="left"><span id="shareDot" class="dot"></span><div><b id="shareLabel">Live location off</b><div class="meta" style="color:rgba(255,255,255,.7)">Turn on so customers can track you en route</div></div></div>
+          <button id="shareToggle" class="toggle" onclick="toggleShareLocation()"></button>
         </div>
-
-        <!-- LOGGED IN SECTIONS -->
-        <div id="custPanels" style="display:none">
-
-          <div id="custHome" class="cust-sec">
-            <div class="section">
-              <div class="section-head">
-                <div>
-                  <div class="section-title">My Bookings</div>
-                  <div class="section-sub" id="custWelcome"></div>
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="show('home')">+ Book New</button>
-              </div>
-              <div id="custBookingList"></div>
-            </div>
-          </div>
-
-          <div id="custProfile" class="cust-sec" style="display:none">
-            <div class="section">
-              <div class="section-title" style="margin-bottom:16px">Edit Profile</div>
-              <div class="grid-2">
-                <div class="field"><label>Full Name</label><input id="cProfileName"></div>
-                <div class="field"><label>Phone</label><input id="cProfilePhone" maxlength="10"></div>
-              </div>
-              <button class="btn btn-primary" onclick="updateProfile()">Save Profile</button>
-            </div>
-          </div>
-
-          <div id="custAddress" class="cust-sec" style="display:none">
-            <div class="section">
-              <div class="section-title" style="margin-bottom:16px">My Address</div>
-              <div class="field"><label>Street Address</label><textarea id="cAddress" placeholder="House no, street, landmark"></textarea></div>
-              <div class="field"><label>City</label><input id="cCity" value="Ambikapur"></div>
-              <button class="btn btn-primary" onclick="saveAddress()">Save Address</button>
-            </div>
-          </div>
-
-          <div id="custSettings" class="cust-sec" style="display:none">
-            <div class="section">
-              <div class="section-title" style="margin-bottom:16px">App Settings</div>
-              <div class="card row">
-                <div>
-                  <div class="bold">Booking Notifications</div>
-                  <div class="small muted">Get updates on your booking status</div>
-                </div>
-                <input id="cNotify" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--brand)">
-              </div>
-              <div style="margin-top:12px">
-                <button class="btn btn-danger btn-sm" onclick="customerLogout()">Logout</button>
-              </div>
-            </div>
-          </div>
-
-          <div id="custHelp" class="cust-sec" style="display:none">
-            <div class="section">
-              <div class="section-title" style="margin-bottom:16px">Help & Support</div>
-              <div class="chat-box" id="chatBox">
-                <div class="chat-msg bot">Namaste! FixIt support ke liye yahan likhiye. Booking, worker, payment ya kisi bhi samasya ke liye help milegi.</div>
-              </div>
-              <div class="gap-row" style="margin-top:10px">
-                <input id="chatInput" class="search-input" placeholder="Apna sawaal likhiye…">
-                <button class="btn btn-dark" onclick="sendHelp()">Send</button>
-              </div>
-            </div>
-          </div>
-
+        <div class="statusLine">
+          <div class="stat"><strong id="wJobs">0</strong><span>Bookings</span></div>
+          <div class="stat"><strong id="wEarn">Rs.0</strong><span>Earnings</span></div>
+          <div class="stat"><strong id="wRating">0</strong><span>Rating</span></div>
+          <div class="stat"><strong id="wStatus">-</strong><span>Status</span></div>
         </div>
+        <div id="workerProfile" class="card" style="margin-top:14px"></div>
+        <div id="workerMap" class="mapBoxSm" style="margin-top:12px"></div>
+        <div id="workerSteps" class="list" style="margin-top:12px"></div>
+        <h3>Incoming / active bookings</h3>
+        <div id="workerBookings" class="list"></div>
       </div>
+    </div>
+  </section>
+</div></main>
+
+<!-- ============ ADMIN ============ -->
+<main id="admin" class="screen"><div class="wrap">
+  <section class="panel" id="adminLogin">
+    <div class="head"><div><h2 class="title">Admin desk</h2><div class="sub">Enter the admin API key to open the console.</div></div></div>
+    <div class="field"><label>Admin API key</label><input id="adminKey" type="password"></div>
+    <button class="btn dark" onclick="adminLogin()">Open console</button>
+  </section>
+  <div id="adminDash" style="display:none">
+    <section class="panel"><div class="statusLine">
+      <div class="stat"><strong id="aCustomers">0</strong><span>Customers</span></div>
+      <div class="stat"><strong id="aWorkers">0</strong><span>Workers</span></div>
+      <div class="stat"><strong id="aPending">0</strong><span>Pending verification</span></div>
+      <div class="stat"><strong id="aBookings">0</strong><span>Bookings</span></div>
+    </div></section>
+    <section class="panel"><div class="head"><div><h2 class="title">Live worker map</h2><div class="sub">Every worker's current position. Green = online, amber = busy, grey = offline.</div></div></div>
+      <div id="adminMap" class="mapBox"></div>
+    </section>
+    <section class="panel"><div class="head"><div><h2 class="title">Worker applications</h2></div></div><div id="adminApps" class="list"></div></section>
+    <section class="panel"><div class="head"><div><h2 class="title">Bookings</h2></div></div><div id="adminBookings" class="list"></div></section>
+  </div>
+</div></main>
+
+<!-- ============ MODALS ============ -->
+<div id="bookingModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Confirm booking</h2><button class="btn soft" onclick="closeModal()">Close</button></div>
+  <div class="modalBody grid2">
+    <div>
+      <div id="bookWorker" class="card"></div>
+      <div class="summary" style="margin-top:12px">
+        <div class="sum"><span>Service</span><b id="sBase"></b></div>
+        <div class="sum"><span>Platform fee</span><b id="sFee"></b></div>
+        <div class="sum total"><span>Total</span><span id="sTotal"></span></div>
+      </div>
+      <div class="meta" style="margin-top:10px" id="geoNote">Locating you so your worker can find you...</div>
+    </div>
+    <div>
+      <div class="field"><label>Name</label><input id="bName"></div>
+      <div class="field"><label>Phone</label><input id="bPhone" maxlength="10"></div>
+      <div class="field"><label>Address</label><textarea id="bAddress"></textarea></div>
+      <div class="field"><label>Issue</label><input id="bNote"></div>
+      <div class="row"><button class="btn primary" id="rzpBtn" onclick="payRazorpay()">Pay Razorpay</button><button class="btn dark" onclick="book('cash')">Book cash</button></div>
+      <button class="btn soft" style="width:100%;margin-top:10px" onclick="book('upi')">Book UPI</button>
     </div>
   </div>
-</main>
+</div></div>
 
-<!-- ======== WORKER ======== -->
-<main id="worker" class="screen">
-  <div class="wrap">
-
-    <div id="workerLoginSection">
-      <div class="grid-2">
-        <!-- Login -->
-        <div class="section">
-          <div class="section-title" style="margin-bottom:4px">Worker Login</div>
-          <div class="section-sub" style="margin-bottom:18px">Already registered? Login with your phone</div>
-          <div class="field"><label>Phone Number</label><input id="wLoginPhone" maxlength="10" placeholder="Your registered phone"></div>
-          <button class="btn btn-dark btn-block" onclick="workerLogin()">Login</button>
-        </div>
-        <!-- Register -->
-        <div class="section">
-          <div class="section-title" style="margin-bottom:4px">New Registration</div>
-          <div class="section-sub" style="margin-bottom:18px">Apply to join FixIt as a verified service professional</div>
-          <div class="grid-2">
-            <div class="field"><label>Full Name</label><input id="rName" placeholder="Your name"></div>
-            <div class="field"><label>Phone</label><input id="rPhone" maxlength="10" placeholder="10-digit mobile"></div>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label>Service Category</label><select id="rService"></select></div>
-            <div class="field"><label>Service Area</label><input id="rArea" value="Ambikapur"></div>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label>Charge per Visit (₹)</label><input id="rCharge" type="number" placeholder="e.g. 300"></div>
-            <div class="field"><label>Experience</label><input id="rExp" placeholder="e.g. 5 yrs, wiring work"></div>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label>Your Photo</label><input id="rPhoto" type="file" accept="image/png,image/jpeg,image/webp" style="height:auto;padding:6px"></div>
-            <div class="field"><label>ID Proof (Aadhaar/Pan)</label><input id="rId" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" style="height:auto;padding:6px"></div>
-          </div>
-          <button class="btn btn-primary btn-block" onclick="workerRegister()">Submit Application</button>
-        </div>
+<div id="trackModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Track your worker</h2><button class="btn soft" onclick="closeTrack()">Close</button></div>
+  <div class="modalBody">
+    <div class="trackHead">
+      <div><div class="name" id="trackWho">-</div><div class="meta" id="trackStatus">-</div></div>
+      <div class="trackStats">
+        <div><strong id="trackDist">-</strong><span>KM away</span></div>
+        <div><strong id="trackEta">-</strong><span>ETA mins</span></div>
       </div>
     </div>
-
-    <!-- Worker Dashboard -->
-    <div id="workerDashSection" style="display:none">
-      <div id="workerVerifyBanner"></div>
-      <div class="grid-4" style="margin-bottom:20px">
-        <div class="stat-box"><div class="stat-val" id="wJobs">0</div><div class="stat-label">Total Bookings</div></div>
-        <div class="stat-box"><div class="stat-val" id="wEarn">₹0</div><div class="stat-label">Total Earned</div></div>
-        <div class="stat-box"><div class="stat-val" id="wRating">—</div><div class="stat-label">Rating</div></div>
-        <div class="stat-box"><div class="stat-val" id="wStatus">—</div><div class="stat-label">Status</div></div>
-      </div>
-      <div class="grid-2">
-        <div>
-          <div class="section" id="workerProfileCard"></div>
-          <div class="section" style="margin-top:16px">
-            <div class="section-title" style="margin-bottom:14px">Verification Progress</div>
-            <div class="steps" id="workerSteps"></div>
-          </div>
-        </div>
-        <div class="section">
-          <div class="section-head">
-            <div class="section-title">Incoming Bookings</div>
-          </div>
-          <div id="workerBookingsList"></div>
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <button class="btn btn-danger btn-sm" onclick="workerLogout()">Logout</button>
-      </div>
-    </div>
-
+    <div id="trackMap" class="mapBox"></div>
+    <div class="row" style="margin-top:12px"><a class="btn soft" id="trackCall" href="#">Call worker</a><span class="meta">Updates every 5 seconds.</span></div>
   </div>
-</main>
+</div></div>
 
-<!-- ======== ADMIN ======== -->
-<main id="admin" class="screen">
-  <div class="wrap">
-
-    <div id="adminLoginSection" class="section" style="max-width:460px;margin:auto">
-      <div class="section-title" style="margin-bottom:4px">Admin Panel</div>
-      <div class="section-sub" style="margin-bottom:20px">Enter your admin API key to access the dashboard</div>
-      <div class="field"><label>Admin API Key</label><input id="adminKey" type="password" placeholder="FIXIT_API_KEY"></div>
-      <button class="btn btn-dark btn-block" onclick="adminLogin()">Unlock Dashboard</button>
-    </div>
-
-    <div id="adminDashSection" style="display:none">
-      <div class="row" style="margin-bottom:20px">
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800">Admin Dashboard</div>
-          <div class="small muted">Manage workers, bookings and customers</div>
-        </div>
-        <button class="btn btn-danger btn-sm" onclick="adminLogout()">Logout</button>
-      </div>
-
-      <div class="grid-4" style="margin-bottom:20px">
-        <div class="stat-box"><div class="stat-val" id="aCustomers">0</div><div class="stat-label">Customers</div></div>
-        <div class="stat-box"><div class="stat-val" id="aWorkers">0</div><div class="stat-label">Workers</div></div>
-        <div class="stat-box"><div class="stat-val" id="aPending">0</div><div class="stat-label">Pending Applications</div></div>
-        <div class="stat-box"><div class="stat-val" id="aBookings">0</div><div class="stat-label">Bookings</div></div>
-      </div>
-
-      <!-- TABS -->
-      <div class="nav-tabs" style="margin-bottom:18px;display:inline-flex">
-        <button id="atab-apps" class="active" onclick="adminTab('apps')">Worker Applications</button>
-        <button id="atab-workers" onclick="adminTab('workers')">All Workers</button>
-        <button id="atab-bookings" onclick="adminTab('bookings')">Bookings</button>
-        <button id="atab-customers" onclick="adminTab('customers')">Customers</button>
-        <button id="atab-tickets" onclick="adminTab('tickets')">Help Tickets</button>
-      </div>
-
-      <div id="adminAppsSection">
-        <div class="section-title" style="margin-bottom:14px">Pending Worker Applications</div>
-        <div id="adminApps"></div>
-      </div>
-      <div id="adminWorkersSection" style="display:none">
-        <div class="section-title" style="margin-bottom:14px">All Verified Workers</div>
-        <div id="adminWorkersList"></div>
-      </div>
-      <div id="adminBookingsSection" style="display:none">
-        <div class="section-title" style="margin-bottom:14px">All Bookings</div>
-        <div id="adminBookingsList"></div>
-      </div>
-      <div id="adminCustomersSection" style="display:none">
-        <div class="section-title" style="margin-bottom:14px">Registered Customers</div>
-        <div id="adminCustomersList"></div>
-      </div>
-      <div id="adminTicketsSection" style="display:none">
-        <div class="section-title" style="margin-bottom:14px">Help Tickets</div>
-        <div id="adminTicketsList"></div>
-      </div>
-    </div>
-
+<div id="reviewModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Review worker</h2><button class="btn soft" onclick="closeReview()">Close</button></div>
+  <div class="modalBody">
+    <div class="field"><label>Stars</label><select id="revStars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
+    <div class="tags"><label class="tag"><input type="checkbox" value="Good behaviour"> Good behaviour</label><label class="tag"><input type="checkbox" value="Excellent service"> Excellent service</label><label class="tag"><input type="checkbox" value="On time"> On time</label></div>
+    <div class="field"><label>Comment</label><textarea id="revComment"></textarea></div>
+    <button class="btn primary" onclick="submitReview()">Submit review</button>
   </div>
-</main>
-
-<!-- BOOKING MODAL -->
-<div id="bookingModal" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h2>Confirm Booking</h2>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕ Close</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid-2">
-        <div>
-          <div id="bookWorkerCard" class="card" style="margin-bottom:12px"></div>
-          <div class="map-box">
-            <div class="map-route"></div>
-            <span class="map-pin map-pin-customer" style="left:22%;top:62%"></span>
-            <span class="map-pin map-pin-worker" id="workerMapPin" style="left:70%;top:36%"></span>
-            <div class="map-label">📍 Customer — 🔧 Worker location</div>
-          </div>
-          <div class="summary-box">
-            <div class="sum-row"><span>Service charge</span><b id="sBase"></b></div>
-            <div class="sum-row"><span>Platform fee (10%)</span><b id="sFee"></b></div>
-            <div class="sum-row total"><span>Total Payable</span><span id="sTotal"></span></div>
-          </div>
-        </div>
-        <div>
-          <div class="field"><label>Your Name</label><input id="bName"></div>
-          <div class="field"><label>Phone Number</label><input id="bPhone" maxlength="10"></div>
-          <div class="field"><label>Service Address</label><textarea id="bAddress" placeholder="House no, street, landmark"></textarea></div>
-          <div class="field"><label>Issue Description</label><input id="bNote" placeholder="What needs to be fixed?"></div>
-          <div class="grid-2" style="margin-top:6px">
-            <button class="btn btn-primary" id="rzpBtn" onclick="payRazorpay()">Pay Online</button>
-            <button class="btn btn-dark" onclick="book('cash')">Pay Cash</button>
-          </div>
-          <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="book('upi')">Pay UPI</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- REVIEW MODAL -->
-<div id="reviewModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-head">
-      <h2>Rate Your Experience</h2>
-      <button class="btn btn-ghost btn-sm" onclick="closeReview()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="field">
-        <label>Star Rating</label>
-        <div class="gap-row" style="gap:8px">
-          <span id="starDisplay" style="font-size:24px;letter-spacing:2px">⭐⭐⭐⭐⭐</span>
-          <select id="revStars" onchange="updateStars()" style="height:36px;border:1.5px solid var(--line);border-radius:8px;padding:0 8px">
-            <option value="5">5 — Excellent</option>
-            <option value="4">4 — Very Good</option>
-            <option value="3">3 — Good</option>
-            <option value="2">2 — Fair</option>
-            <option value="1">1 — Poor</option>
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>Quick Tags</label>
-        <div class="tags" style="gap:8px">
-          <label class="tag" style="cursor:pointer"><input type="checkbox" value="Good behaviour" style="margin-right:4px"> Good behaviour</label>
-          <label class="tag" style="cursor:pointer"><input type="checkbox" value="Excellent service" style="margin-right:4px"> Excellent service</label>
-          <label class="tag" style="cursor:pointer"><input type="checkbox" value="On time" style="margin-right:4px"> On time</label>
-          <label class="tag" style="cursor:pointer"><input type="checkbox" value="Professional" style="margin-right:4px"> Professional</label>
-          <label class="tag" style="cursor:pointer"><input type="checkbox" value="Clean work" style="margin-right:4px"> Clean work</label>
-        </div>
-      </div>
-      <div class="field"><label>Comment (optional)</label><textarea id="revComment" placeholder="Share your experience…"></textarea></div>
-      <button class="btn btn-primary btn-block" onclick="submitReview()">Submit Review</button>
-    </div>
-  </div>
-</div>
+</div></div>
 
 <script>
-// ============================================================
-// UTILITIES
-// ============================================================
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const money=v=>'₹'+Number(v||0).toLocaleString('en-IN');
-const phone10=v=>String(v||'').replace(/\D/g,'').slice(-10);
+const qs=id=>document.getElementById(id);
+const money=v=>"Rs. "+Number(v||0).toLocaleString("en-IN");
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const AMBI={lat:23.1226,lng:83.1956};
 
-let services=[], workers=[], settings={}, selectedService='';
-let currentCustomer=null, workerPhoneSession='', adminKeySession='';
-let reviewBookingId=null;
-let customerBookings=[];
+let services=[],workers=[],settings={},selected="",currentWorker=null;
+let currentCustomer=JSON.parse(localStorage.fixitCustomer||"{}");
+let workerPhone=localStorage.fixitWorkerPhone||"";
+let adminKey=localStorage.fixitAdminKey||"";
+let customerBookings=[],reviewBookingId=new URLSearchParams(location.search).get("review");
+let bookingGeo=null,shareWatchId=null,trackTimer=null,trackMapObj=null,trackMarkers={};
+let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
 
-// Load saved sessions
-try{ currentCustomer=JSON.parse(localStorage.fixitCustomer||'null'); }catch(e){}
-workerPhoneSession=localStorage.fixitWorkerPhone||'';
-adminKeySession=localStorage.fixitAdminKey||'';
+async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"API failed");return d}
+function headers(admin=false){let h={"Content-Type":"application/json"};if(admin)h["x-api-key"]=adminKey;return h}
+function toast(m){qs("toast").textContent=m;qs("toast").classList.add("show");setTimeout(()=>qs("toast").classList.remove("show"),2800)}
 
-function toast(msg,dur=3000){
-  const t=$('toast');
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),dur);
-}
-
-async function api(path, opts={}){
-  const r=await fetch(path,opts);
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(d.error||'Request failed');
-  return d;
-}
-
-function headers(admin=false){
-  const h={'Content-Type':'application/json'};
-  if(admin) h['x-api-key']=adminKeySession;
-  return h;
-}
-
-// ============================================================
-// NAVIGATION
-// ============================================================
 function show(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  $(id).classList.add('active');
-  ['Home','Customer','Worker','Admin'].forEach(n=>{
-    $('tab'+n).classList.toggle('active',n.toLowerCase()===id);
-  });
-  if(id==='customer') initCustomerScreen();
-  if(id==='worker' && workerPhoneSession) showWorkerDash();
-  if(id==='admin' && adminKeySession) loadAdminDash();
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  qs(id).classList.add("active");
+  ["Landing","Customer","Worker","Admin"].forEach(n=>{let t=qs("tab"+n);if(t)t.classList.toggle("active",n.toLowerCase()==id)});
+  if(id=="customer")loadCustomer();
+  if(id=="worker"&&workerPhone)workerDashboard();
+  if(id=="admin"&&adminKey)loadAdmin();
 }
 
-// ============================================================
-// BOOT
-// ============================================================
 async function boot(){
-  try{
-    const d=await api('/api/bootstrap');
-    services=d.services; workers=d.workers; settings=d.settings;
-    $('syncStatus').textContent='● Live';
-    $('syncStatus').classList.add('live');
-    $('mWorkers').textContent=workers.filter(w=>w.status==='Online').length;
-    $('mBookings').textContent='';
-    renderServiceChips();
-    renderAreaFilter();
-    renderWorkers();
-    $('rService').innerHTML=services.map(s=>`<option>${s}</option>`).join('');
-    const reviewParam=new URLSearchParams(location.search).get('review');
-    if(reviewParam){ reviewBookingId=reviewParam; openReview(); }
-  }catch(e){
-    $('syncStatus').textContent='Offline';
-    toast('Could not connect to server: '+e.message);
-  }
+  let d=await api("/api/bootstrap");
+  services=d.services;workers=d.workers;settings=d.settings;
+  qs("sync").textContent="Live";qs("syncDot").classList.add("live");
+  qs("mWorkers").textContent=workers.length;
+  qs("mOnline").textContent=workers.filter(w=>w.status=="Online").length;
+  renderServices();renderAreas();renderWorkers();renderPreview();
+  qs("rService").innerHTML=services.map(s=>`<option>${s}</option>`).join("");
+  fillCustomer();
+  if(reviewBookingId)openReview(reviewBookingId);
 }
-boot();
+boot().catch(e=>toast(e.message));
 
-// ============================================================
-// HOME — SERVICES & WORKERS
-// ============================================================
-const serviceIcons={'Electrician':'⚡','Plumber':'🔧','Carpenter':'🪚','AC Repair':'❄️','Cleaning':'🧹'};
-
-function renderServiceChips(){
-  const chips=[{name:'',label:'All Services'},...services.map(s=>({name:s,label:s}))];
-  $('serviceChips').innerHTML=chips.map(c=>`
-    <button class="chip ${selectedService===c.name?'active':''}" onclick="filterService('${esc(c.name)}')">
-      <div class="chip-icon">${serviceIcons[c.name]||c.name.slice(0,2).toUpperCase()}</div>
-      <span class="chip-name">${esc(c.label)}</span>
-      <span class="chip-count">${workers.filter(w=>!c.name||w.service===c.name).length} workers</span>
-    </button>`).join('');
+function renderPreview(){
+  qs("workersPreview").innerHTML=workers.slice(0,3).map(w=>`<article class="card"><div class="row"><div class="row"><div class="avatar">${avatar(w)}</div><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)}</div></div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div></article>`).join("")||'<div class="empty">No workers yet.</div>';
 }
 
-function filterService(s){ selectedService=s; renderServiceChips(); renderWorkers(); }
-
-function renderAreaFilter(){
-  const areas=[...new Set(workers.map(w=>w.area))];
-  $('areaFilter').innerHTML='<option value="">All Areas</option>'+areas.map(a=>`<option>${esc(a)}</option>`).join('');
+function renderServices(){
+  qs("services").innerHTML=["",...services].map(s=>`<button class="chip ${selected==s?"active":""}" onclick="selected='${s}';renderServices();renderWorkers()"><span class="icon">${s?s.slice(0,2).toUpperCase():"ALL"}</span><b>${esc(s||"All services")}</b><div class="meta">${workers.filter(w=>!s||w.service==s).length} workers</div></button>`).join("");
 }
+function renderAreas(){qs("area").innerHTML='<option value="">All areas</option>'+[...new Set(workers.map(w=>w.area))].map(a=>`<option>${esc(a)}</option>`).join("")}
+function avatar(w){return w.photoUrl?`<img src="${esc(w.photoUrl)}">`:(w.service||"WK").slice(0,2).toUpperCase()}
 
 function renderWorkers(){
-  const q=($('searchInput').value||'').toLowerCase();
-  const area=$('areaFilter').value;
-  const list=workers.filter(w=>
-    w.verificationStatus==='verified' &&
-    (!selectedService||w.service===selectedService) &&
-    (!area||w.area===area) &&
-    [w.name,w.service,w.area,w.exp].join(' ').toLowerCase().includes(q)
-  );
-  $('workerSubTitle').textContent=`${list.length} worker${list.length!==1?'s':''} found`;
-  if(!list.length){
-    $('workerGrid').innerHTML='<div class="empty" style="grid-column:1/-1">No workers found. Try changing filter.</div>';
-    return;
-  }
-  $('workerGrid').innerHTML=list.map(w=>{
-    const fee=Math.round(w.charge*(settings.commissionRate||0.1));
-    const total=w.charge+fee;
-    return `<article class="worker-card">
-      <div class="worker-head">
-        <div class="worker-avatar">${w.photoUrl?`<img src="${esc(w.photoUrl)}" alt="${esc(w.name)}">`:(w.service||'WK').slice(0,2).toUpperCase()}</div>
-        <div>
-          <div class="worker-name">${esc(w.name)}</div>
-          <div class="worker-meta">${esc(w.service)} · ${esc(w.area)}</div>
-          <div class="tags" style="margin-top:6px">
-            <span class="tag tag-green">✓ Verified</span>
-            <span class="tag ${w.status==='Online'?'tag-green':w.status==='Busy'?'tag-amber':'tag-muted'}">${esc(w.status)}</span>
-            <span class="tag">⭐ ${w.rating}</span>
-          </div>
-        </div>
-      </div>
-      <div class="worker-exp">${esc(w.exp)}</div>
-      <div class="worker-foot">
-        <div>
-          <div class="price-label">Starting from</div>
-          <div class="price-value">${money(total)}</div>
-          <div class="small muted" style="font-size:11px">incl. platform fee</div>
-        </div>
-        <button class="btn btn-primary" ${w.status!=='Online'?'disabled':''} onclick="openBooking(${w.id})">
-          ${w.status==='Online'?'Book Now':'Unavailable'}
-        </button>
-      </div>
-    </article>`;
-  }).join('');
+  let q=(qs("search").value||"").toLowerCase(),area=qs("area").value;
+  let list=workers.filter(w=>(!selected||w.service==selected)&&(!area||w.area==area)&&[w.name,w.service,w.area,w.exp].join(" ").toLowerCase().includes(q));
+  qs("workerSub").textContent=`${list.length} workers found`;
+  qs("workers").innerHTML=list.length?list.map(w=>{
+    let fee=Math.round(w.charge*(settings.commissionRate||.1)),total=w.charge+fee;
+    return `<article class="card worker"><div class="row"><div class="row"><div class="avatar">${avatar(w)}</div><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)}</div></div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag">${w.rating} star</span><span class="tag blue">Location live</span></div><div class="exp">${esc(w.exp)}</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book</button></div></article>`;
+  }).join(""):'<div class="empty" style="grid-column:1/-1">No worker found.</div>';
 }
 
-// ============================================================
-// CUSTOMER PANEL
-// ============================================================
-function initCustomerScreen(){
-  if(currentCustomer && currentCustomer.phone){
-    showCustomerPanels();
-    loadCustomerBookings();
+function fillCustomer(){
+  qs("cName").value=currentCustomer.name||"";qs("cPhone").value=currentCustomer.phone||"";
+  qs("cAddress").value=currentCustomer.address||"";qs("cCity").value=currentCustomer.city||"Ambikapur";
+  qs("cProfileName").value=currentCustomer.name||"";qs("cProfilePhone").value=currentCustomer.phone||"";
+}
+function custSection(id){document.querySelectorAll(".custSec").forEach(s=>s.style.display="none");qs(id).style.display="block"}
+function toggleCustMenu(){qs("custMenu").classList.toggle("open")}
+
+async function customerLogin(fromProfile=false){
+  let c={name:(fromProfile?qs("cProfileName").value:qs("cName").value)||qs("cName").value,
+    phone:(fromProfile?qs("cProfilePhone").value:qs("cPhone").value)||qs("cPhone").value,
+    address:qs("cAddress").value,city:qs("cCity").value,notification:qs("cNotify").checked};
+  let d=await api("/api/customer/login",{method:"POST",headers:headers(),body:JSON.stringify(c)});
+  currentCustomer=d.customer;localStorage.fixitCustomer=JSON.stringify(currentCustomer);
+  fillCustomer();toast("Customer saved");loadCustomer();
+}
+
+async function loadCustomer(){
+  fillCustomer();
+  if(!currentCustomer.phone){qs("custBookings").innerHTML='<div class="empty">Login to see bookings.</div>';return}
+  let d=await api("/api/customer/bookings?phone="+currentCustomer.phone);
+  customerBookings=d.bookings;qs("mBookings").textContent=d.bookings.length;
+  qs("custBookings").innerHTML=bookingCards(d.bookings,true);
+}
+
+function bookingCards(list){
+  if(!list.length)return'<div class="empty">No bookings yet.</div>';
+  const trackable=["accepted","on_the_way","requested"];
+  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.service)} with ${esc(b.workerName)}</div><div class="meta">${esc(b.customerAddress||"")} · ${esc(b.time||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${esc(b.paymentMethod)} / ${esc(b.paymentStatus)}</span></div></div><b>${money(b.total)}</b></div><div class="row" style="margin-top:10px">${trackable.includes(b.status)?`<button class="btn amberBtn" onclick="openTrack(${b.id})">Track live</button>`:""}<a class="btn soft" href="tel:${esc(b.workerPhone)}">Call worker</a>${b.status=="completed"?`<button class="btn primary" onclick="openReview(${b.id})">Review</button>`:""}</div></article>`).join("");
+}
+
+/* ---- booking modal ---- */
+function openBooking(id){
+  currentWorker=workers.find(w=>w.id==id);
+  let fee=Math.round(currentWorker.charge*(settings.commissionRate||.1)),total=currentWorker.charge+fee;
+  qs("bName").value=currentCustomer.name||"";qs("bPhone").value=currentCustomer.phone||"";qs("bAddress").value=currentCustomer.address||"";
+  qs("bookWorker").innerHTML=`<div class="row"><div class="avatar">${avatar(currentWorker)}</div><div><div class="name">${esc(currentWorker.name)}</div><div class="meta">${esc(currentWorker.service)} · ${esc(currentWorker.area)} · ${currentWorker.rating} star</div></div></div>`;
+  qs("sBase").textContent=money(currentWorker.charge);qs("sFee").textContent=money(fee);qs("sTotal").textContent=money(total);
+  qs("rzpBtn").disabled=!settings.razorpayEnabled;
+  bookingGeo=null;
+  qs("geoNote").textContent="Locating you so your worker can find you...";
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{bookingGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};qs("geoNote").textContent="Your location is ready to share for live tracking.";},
+      ()=>{qs("geoNote").textContent="Location permission denied — tracking will use the workshop's area centre instead.";},
+      {timeout:6000}
+    );
   } else {
-    $('custLoginPanel').style.display='block';
-    $('custPanels').style.display='none';
-    if(currentCustomer && currentCustomer.name) $('cName').value=currentCustomer.name;
+    qs("geoNote").textContent="This browser can't share location — tracking will use the area centre.";
   }
+  qs("bookingModal").classList.add("open");
 }
-
-function showCustomerPanels(){
-  $('custLoginPanel').style.display='none';
-  $('custPanels').style.display='block';
-  $('custWelcome').textContent='Welcome, '+currentCustomer.name+' ('+currentCustomer.phone+')';
-  $('cProfileName').value=currentCustomer.name||'';
-  $('cProfilePhone').value=currentCustomer.phone||'';
-  $('cAddress').value=currentCustomer.address||'';
-  $('cCity').value=currentCustomer.city||'Ambikapur';
-}
-
-function custNav(id){
-  document.querySelectorAll('.cust-sec').forEach(s=>s.style.display='none');
-  $(id).style.display='block';
-  document.querySelectorAll('#custSidebar .sidebar-btn').forEach(b=>{
-    b.classList.toggle('active', b.getAttribute('onclick').includes(id));
-  });
-}
-
-function toggleCustMenu(){
-  $('custSidebar').classList.toggle('open');
-}
-
-async function customerLogin(){
-  const name=$('cName').value.trim();
-  const phone=phone10($('cPhone').value);
-  if(!name||phone.length!==10){
-    toast('Please enter a valid name and 10-digit phone number');
-    return;
-  }
-  try{
-    const d=await api('/api/customer/login',{
-      method:'POST',headers:headers(),
-      body:JSON.stringify({name,phone,address:$('cAddress').value,city:$('cCity').value||'Ambikapur'})
-    });
-    currentCustomer=d.customer;
-    localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-    toast('Login successful! Welcome, '+currentCustomer.name);
-    showCustomerPanels();
-    loadCustomerBookings();
-    boot();
-  }catch(e){ toast(e.message); }
-}
-
-async function updateProfile(){
-  const name=$('cProfileName').value.trim();
-  const phone=phone10($('cProfilePhone').value);
-  if(!name||phone.length!==10){ toast('Enter valid name and phone'); return; }
-  try{
-    const d=await api('/api/customer/login',{
-      method:'POST',headers:headers(),
-      body:JSON.stringify({...currentCustomer,name,phone})
-    });
-    currentCustomer=d.customer;
-    localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-    $('custWelcome').textContent='Welcome, '+currentCustomer.name+' ('+currentCustomer.phone+')';
-    toast('Profile updated');
-  }catch(e){ toast(e.message); }
-}
-
-async function saveAddress(){
-  if(!currentCustomer){ toast('Please login first'); return; }
-  try{
-    const d=await api('/api/customer/login',{
-      method:'POST',headers:headers(),
-      body:JSON.stringify({...currentCustomer,address:$('cAddress').value,city:$('cCity').value||'Ambikapur'})
-    });
-    currentCustomer=d.customer;
-    localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-    toast('Address saved');
-  }catch(e){ toast(e.message); }
-}
-
-function customerLogout(){
-  currentCustomer=null;
-  localStorage.removeItem('fixitCustomer');
-  $('custLoginPanel').style.display='block';
-  $('custPanels').style.display='none';
-  $('cName').value=''; $('cPhone').value='';
-  toast('Logged out');
-}
-
-async function loadCustomerBookings(){
-  if(!currentCustomer||!currentCustomer.phone) return;
-  try{
-    const d=await api('/api/customer/bookings?phone='+currentCustomer.phone);
-    customerBookings=d.bookings;
-    $('mBookings').textContent=customerBookings.length;
-    $('custBookingList').innerHTML=renderBookingCards(customerBookings,true);
-  }catch(e){}
-}
-
-function renderBookingCards(list,isCustomer=false){
-  if(!list||!list.length) return '<div class="empty">No bookings yet. <a href="#" onclick="show(\'home\')" style="color:var(--brand)">Book a service</a></div>';
-  return [...list].reverse().map(b=>`
-    <div class="booking-card">
-      <div class="row">
-        <div>
-          <div class="booking-service">${esc(b.service)} with ${esc(b.workerName)}</div>
-          <div class="booking-meta">${esc(b.customerAddress||'')} · ${esc(b.time||'')}</div>
-          <div class="tags" style="margin-top:6px">
-            <span class="tag tag-blue">${esc(b.status)}</span>
-            <span class="tag">${esc(b.paymentMethod)} · ${esc(b.paymentStatus)}</span>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px">${money(b.total)}</div>
-          <div class="small muted">Booking #${b.id}</div>
-        </div>
-      </div>
-      <div class="map-box" style="height:110px">
-        <div class="map-route"></div>
-        <span class="map-pin map-pin-customer" style="left:22%;top:62%"></span>
-        <span class="map-pin map-pin-worker" style="left:70%;top:36%"></span>
-      </div>
-      <div class="booking-actions">
-        <a class="btn btn-soft btn-sm" href="tel:${esc(b.workerPhone)}">📞 Call Worker</a>
-        ${isCustomer && b.status==='completed' && !b.reviewId ? `<button class="btn btn-primary btn-sm" onclick="openReviewForBooking(${b.id})">⭐ Leave Review</button>` : ''}
-      </div>
-    </div>`).join('');
-}
-
-// ============================================================
-// BOOKING FLOW
-// ============================================================
-let currentWorker=null;
-
-function openBooking(workerId){
-  currentWorker=workers.find(w=>w.id===workerId);
-  if(!currentWorker) return;
-  const fee=Math.round(currentWorker.charge*(settings.commissionRate||0.1));
-  const total=currentWorker.charge+fee;
-  $('bookWorkerCard').innerHTML=`
-    <div class="row">
-      <div class="gap-row">
-        <div class="worker-avatar">${currentWorker.photoUrl?`<img src="${esc(currentWorker.photoUrl)}">`:(currentWorker.service||'WK').slice(0,2).toUpperCase()}</div>
-        <div>
-          <div class="worker-name">${esc(currentWorker.name)}</div>
-          <div class="small muted">${esc(currentWorker.service)} · ${esc(currentWorker.area)} · ⭐${currentWorker.rating}</div>
-        </div>
-      </div>
-      <span class="tag tag-green">✓ Verified</span>
-    </div>`;
-  $('sBase').textContent=money(currentWorker.charge);
-  $('sFee').textContent=money(fee);
-  $('sTotal').textContent=money(total);
-  $('rzpBtn').disabled=!settings.razorpayEnabled;
-  if(currentCustomer){
-    $('bName').value=currentCustomer.name||'';
-    $('bPhone').value=currentCustomer.phone||'';
-    $('bAddress').value=currentCustomer.address||'';
-  }
-  $('bookingModal').classList.add('open');
-}
-
-function closeModal(){ $('bookingModal').classList.remove('open'); }
-
-function getCustomerFromModal(){
-  return{
-    name:$('bName').value.trim(),
-    phone:phone10($('bPhone').value),
-    address:$('bAddress').value.trim(),
-    city:(currentCustomer&&currentCustomer.city)||'Ambikapur',
-    note:$('bNote').value.trim()
-  };
-}
+function closeModal(){qs("bookingModal").classList.remove("open")}
+function customerFromModal(){return{name:qs("bName").value,phone:qs("bPhone").value,address:qs("bAddress").value,city:qs("cCity").value,note:qs("bNote").value,lat:bookingGeo?bookingGeo.lat:AMBI.lat,lng:bookingGeo?bookingGeo.lng:AMBI.lng}}
 
 async function book(method){
-  const cust=getCustomerFromModal();
-  if(!cust.name||cust.phone.length!==10){
-    toast('Please enter your name and a valid 10-digit phone number');
-    return;
-  }
-  if(!cust.address){ toast('Please enter your service address'); return; }
-  try{
-    const d=await api('/api/bookings',{
-      method:'POST',headers:headers(),
-      body:JSON.stringify({workerId:currentWorker.id,customer:cust,paymentMethod:method})
-    });
-    closeModal();
-    currentCustomer={name:d.booking.customerName,phone:d.booking.customerPhone,address:d.booking.customerAddress,city:d.booking.customerCity};
-    localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-    toast('Booking confirmed! Worker will contact you shortly.');
-    boot();
-    show('customer');
-  }catch(e){ toast(e.message); }
+  let d=await api("/api/bookings",{method:"POST",headers:headers(),body:JSON.stringify({workerId:currentWorker.id,customer:customerFromModal(),paymentMethod:method})});
+  closeModal();
+  currentCustomer={name:d.booking.customerName,phone:d.booking.customerPhone,address:d.booking.customerAddress,city:d.booking.customerCity};
+  localStorage.fixitCustomer=JSON.stringify(currentCustomer);
+  toast("Booking sent to worker");
+  show("customer");custSection("custHome");
 }
 
 async function payRazorpay(){
-  const total=currentWorker.charge+Math.round(currentWorker.charge*(settings.commissionRate||0.1));
-  try{
-    const o=await api('/api/create-order',{method:'POST',headers:headers(),body:JSON.stringify({amount:total*100,receipt:'fixit_'+Date.now()})});
-    new Razorpay({
-      key:o.key_id, amount:o.amount, currency:o.currency, order_id:o.order_id,
-      name:settings.merchantName||'FixIt', description:currentWorker.service+' booking',
-      handler:async r=>{
-        await api('/api/verify-payment',{method:'POST',headers:headers(),body:JSON.stringify(r)});
-        await book('razorpay');
-      },
-      modal:{ondismiss:()=>toast('Payment cancelled')}
-    }).open();
-  }catch(e){ toast(e.message); }
+  let total=currentWorker.charge+Math.round(currentWorker.charge*(settings.commissionRate||.1));
+  let o=await api("/api/create-order",{method:"POST",headers:headers(),body:JSON.stringify({amount:total*100,receipt:"fixit_"+Date.now()})});
+  new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:settings.merchantName||"FixIt",description:currentWorker.service+" booking",
+    handler:async r=>{await api("/api/verify-payment",{method:"POST",headers:headers(),body:JSON.stringify(r)});await book("razorpay")},
+    modal:{ondismiss:()=>toast("Payment cancelled")}}).open();
 }
 
-// ============================================================
-// REVIEW
-// ============================================================
-function openReviewForBooking(id){ reviewBookingId=id; openReview(); }
-function openReview(){ $('reviewModal').classList.add('open'); }
-function closeReview(){ $('reviewModal').classList.remove('open'); reviewBookingId=null; }
-function updateStars(){
-  const n=parseInt($('revStars').value);
-  $('starDisplay').textContent='⭐'.repeat(n)+'☆'.repeat(5-n);
-}
+/* ---- live tracking (customer side) ---- */
+function pinDivIcon(cls,glyph){return L.divIcon({className:"",html:`<div class="${cls}"><span>${glyph}</span></div>`,iconSize:[30,30],iconAnchor:[15,15]})}
 
-async function submitReview(){
-  if(!reviewBookingId){ toast('No booking selected'); return; }
-  const tags=[...document.querySelectorAll('#reviewModal input[type=checkbox]:checked')].map(x=>x.value);
-  try{
-    await api('/api/reviews',{method:'POST',headers:headers(),body:JSON.stringify({
-      bookingId:Number(reviewBookingId),
-      rating:parseInt($('revStars').value),
-      tags, comment:$('revComment').value
-    })});
-    toast('Review submitted. Thank you!');
-    closeReview();
-    loadCustomerBookings();
-    boot();
-  }catch(e){ toast(e.message); }
-}
-
-// ============================================================
-// HELP CHAT
-// ============================================================
-async function sendHelp(){
-  const msg=$('chatInput').value.trim();
-  if(!msg) return;
-  const box=$('chatBox');
-  box.innerHTML+=`<div class="chat-msg me">${esc(msg)}</div>`;
-  $('chatInput').value='';
-  box.scrollTop=box.scrollHeight;
-  try{
-    const d=await api('/api/help/chat',{method:'POST',headers:headers(),body:JSON.stringify({phone:currentCustomer?.phone||'',message:msg})});
-    box.innerHTML+=`<div class="chat-msg bot">${esc(d.reply)}</div>`;
-    box.scrollTop=box.scrollHeight;
-  }catch(e){ box.innerHTML+=`<div class="chat-msg bot">Sorry, unable to connect right now.</div>`; }
-}
-
-// ============================================================
-// WORKER PANEL
-// ============================================================
-async function workerRegister(){
-  const name=$('rName').value.trim();
-  const phone=phone10($('rPhone').value);
-  if(!name||phone.length!==10){ toast('Enter valid name and phone'); return; }
-  if(!$('rCharge').value||Number($('rCharge').value)<50){ toast('Enter a valid charge (min ₹50)'); return; }
-  if(!$('rPhoto').files[0]||!$('rId').files[0]){ toast('Please upload your photo and ID proof'); return; }
-  try{
-    const photo=await fileToData($('rPhoto'));
-    const idProof=await fileToData($('rId'));
-    const d=await api('/api/worker/register',{
-      method:'POST',headers:headers(),
-      body:JSON.stringify({name,phone,service:$('rService').value,area:$('rArea').value,charge:$('rCharge').value,exp:$('rExp').value,photo,idProof})
-    });
-    workerPhoneSession=d.application.phone;
-    localStorage.fixitWorkerPhone=workerPhoneSession;
-    toast('Application submitted! Awaiting admin verification.');
-    showWorkerDash();
-  }catch(e){ toast(e.message); }
-}
-
-async function workerLogin(){
-  const phone=phone10($('wLoginPhone').value);
-  if(phone.length!==10){ toast('Enter a valid 10-digit phone number'); return; }
-  try{
-    await api('/api/worker/login',{method:'POST',headers:headers(),body:JSON.stringify({phone})});
-    workerPhoneSession=phone;
-    localStorage.fixitWorkerPhone=workerPhoneSession;
-    toast('Login successful');
-    showWorkerDash();
-  }catch(e){ toast(e.message); }
-}
-
-async function showWorkerDash(){
-  if(!workerPhoneSession) return;
-  try{
-    const d=await api('/api/worker/dashboard?phone='+workerPhoneSession);
-    const w=d.worker||d.application||{};
-    $('workerLoginSection').style.display='none';
-    $('workerDashSection').style.display='block';
-    $('wJobs').textContent=d.bookings.length;
-    $('wEarn').textContent=money(d.bookings.filter(b=>b.status==='completed').reduce((s,b)=>s+b.base,0));
-    $('wRating').textContent=w.rating||'—';
-    $('wStatus').textContent=w.status||'—';
-
-    // Verification banner
-    const vs=w.verificationStatus||'pending';
-    const banners={
-      pending:`<div class="verify-banner pending">⏳ Your application is under review. Admin will verify your documents soon.</div>`,
-      verified:`<div class="verify-banner verified">✅ Account verified! You can now receive bookings.</div>`,
-      rejected:`<div class="verify-banner rejected">❌ Application rejected: ${esc(w.rejectionReason||'Documents not clear')}. Please re-apply.</div>`
-    };
-    $('workerVerifyBanner').innerHTML=banners[vs]||'';
-
-    // Profile card
-    if(d.worker){
-      $('workerProfileCard').innerHTML=`
-        <div class="section-title" style="margin-bottom:14px">My Profile</div>
-        <div class="row" style="margin-bottom:14px">
-          <div class="gap-row">
-            <div class="worker-avatar" style="width:48px;height:48px">${w.photoUrl?`<img src="${esc(w.photoUrl)}">`:(w.service||'WK').slice(0,2).toUpperCase()}</div>
-            <div>
-              <div class="bold">${esc(w.name)}</div>
-              <div class="small muted">${esc(w.service)} · ${esc(w.area)} · ${esc(w.phone)}</div>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Update Status</label>
-          <select onchange="updateWorkerStatus(this.value)" style="height:40px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;width:100%">
-            <option ${w.status==='Online'?'selected':''}>Online</option>
-            <option ${w.status==='Offline'?'selected':''}>Offline</option>
-            <option ${w.status==='Busy'?'selected':''}>Busy</option>
-          </select>
-        </div>`;
-    } else {
-      $('workerProfileCard').innerHTML=`<div class="empty">Verification ${vs}. Profile visible after approval.</div>`;
-    }
-
-    // Steps
-    const steps=['Personal details submitted','Documents uploaded','Admin verification','Dashboard active'];
-    $('workerSteps').innerHTML=steps.map((s,i)=>{
-      const done=i<2||(i===2&&vs==='verified')||(i===3&&vs==='verified');
-      return `<div class="step-item">
-        <div class="step-num ${done?'done':''}">${done?'✓':(i+1)}</div>
-        <div class="step-label">${s}</div>
-        <span class="tag ${done?'tag-green':'tag-amber'}">${done?'Done':'Pending'}</span>
-      </div>`;
-    }).join('');
-
-    // Bookings
-    $('workerBookingsList').innerHTML=renderWorkerBookings(d.bookings);
-  }catch(e){ toast(e.message); }
-}
-
-function renderWorkerBookings(list){
-  if(!list||!list.length) return '<div class="empty">No bookings assigned yet.</div>';
-  return [...list].reverse().map(b=>`
-    <div class="booking-card">
-      <div class="row">
-        <div>
-          <div class="booking-service">${esc(b.customerName)} — ${esc(b.service)}</div>
-          <div class="booking-meta">${esc(b.customerAddress||'')} · ${esc(b.note||'')}</div>
-          <div class="tags" style="margin-top:6px">
-            <span class="tag tag-blue">${esc(b.status)}</span>
-            <span class="tag">${money(b.total)}</span>
-          </div>
-        </div>
-        <a class="btn btn-soft btn-sm" href="tel:${esc(b.customerPhone)}">📞 Call</a>
-      </div>
-      <div class="booking-actions">
-        <button class="btn btn-soft btn-sm" onclick="workerAction(${b.id},'accept')">✓ Accept</button>
-        <button class="btn btn-dark btn-sm" onclick="workerAction(${b.id},'start')">🚗 On Way</button>
-        <button class="btn btn-primary btn-sm" onclick="workerAction(${b.id},'complete')">✅ Done</button>
-      </div>
-    </div>`).join('');
-}
-
-async function workerAction(id,act){
-  try{
-    const d=await api(`/api/bookings/${id}/${act}`,{method:'POST',headers:headers(),body:JSON.stringify({workerPhone:workerPhoneSession})});
-    if(act==='complete'&&d.whatsappReviewLink) window.open(d.whatsappReviewLink,'_blank');
-    toast(act==='complete'?'Job completed! Review link sent to customer.':'Booking updated');
-    showWorkerDash();
-    boot();
-  }catch(e){ toast(e.message); }
-}
-
-async function updateWorkerStatus(status){
-  try{
-    await api('/api/worker/profile',{method:'PATCH',headers:headers(),body:JSON.stringify({phone:workerPhoneSession,status})});
-    toast('Status updated to '+status);
-    showWorkerDash(); boot();
-  }catch(e){ toast(e.message); }
-}
-
-function workerLogout(){
-  workerPhoneSession='';
-  localStorage.removeItem('fixitWorkerPhone');
-  $('workerDashSection').style.display='none';
-  $('workerLoginSection').style.display='block';
-  $('wLoginPhone').value='';
-  toast('Logged out');
-}
-
-async function fileToData(input){
-  const f=input.files[0];
-  if(!f) return null;
-  if(f.size>2500000) throw new Error('File must be under 2.5 MB');
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=()=>res({name:f.name,type:f.type,dataUrl:r.result});
-    r.onerror=()=>rej(new Error('File read failed'));
-    r.readAsDataURL(f);
-  });
-}
-
-// ============================================================
-// ADMIN PANEL
-// ============================================================
-let adminData=null;
-let currentAdminTab='apps';
-
-async function adminLogin(){
-  adminKeySession=$('adminKey').value.trim();
-  if(!adminKeySession){ toast('Enter admin key'); return; }
-  localStorage.fixitAdminKey=adminKeySession;
-  await loadAdminDash();
-}
-
-async function loadAdminDash(){
-  try{
-    const d=await api('/api/admin/dashboard',{headers:headers(true)});
-    adminData=d;
-    $('adminLoginSection').style.display='none';
-    $('adminDashSection').style.display='block';
-    $('aCustomers').textContent=d.customers.length;
-    $('aWorkers').textContent=d.workers.filter(w=>w.verificationStatus==='verified').length;
-    $('aPending').textContent=d.workerApplications.filter(a=>a.verificationStatus==='pending').length;
-    $('aBookings').textContent=d.bookings.length;
-    renderAdminTab(currentAdminTab);
-  }catch(e){
-    localStorage.removeItem('fixitAdminKey');
-    adminKeySession='';
-    toast('Admin login failed: '+e.message);
-    $('adminLoginSection').style.display='block';
-    $('adminDashSection').style.display='none';
+function openTrack(bookingId){
+  qs("trackModal").classList.add("open");
+  if(!trackMapObj){
+    trackMapObj=L.map("trackMap");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap"}).addTo(trackMapObj);
   }
+  setTimeout(()=>trackMapObj.invalidateSize(),80);
+  pollTrack(bookingId);
+  clearInterval(trackTimer);
+  trackTimer=setInterval(()=>pollTrack(bookingId),5000);
 }
+function closeTrack(){qs("trackModal").classList.remove("open");clearInterval(trackTimer)}
 
-function adminTab(tab){
-  currentAdminTab=tab;
-  ['apps','workers','bookings','customers','tickets'].forEach(t=>{
-    $('atab-'+t).classList.toggle('active',t===tab);
-    $('admin'+t.charAt(0).toUpperCase()+t.slice(1)+'Section').style.display=t===tab?'block':'none';
-  });
-  renderAdminTab(tab);
-}
-
-function renderAdminTab(tab){
-  if(!adminData) return;
-  if(tab==='apps') renderAdminApps();
-  if(tab==='workers') renderAdminWorkers();
-  if(tab==='bookings') renderAdminBookings();
-  if(tab==='customers') renderAdminCustomers();
-  if(tab==='tickets') renderAdminTickets();
-}
-
-function renderAdminApps(){
-  const apps=adminData.workerApplications;
-  if(!apps.length){ $('adminApps').innerHTML='<div class="empty">No worker applications yet.</div>'; return; }
-  $('adminApps').innerHTML=apps.map(a=>`
-    <div class="app-card">
-      <div class="app-head">
-        <div class="worker-avatar" style="width:46px;height:46px">${a.photoUrl?`<img src="${esc(a.photoUrl)}">`:(a.service||'WK').slice(0,2).toUpperCase()}</div>
-        <div class="app-info">
-          <div class="app-name">${esc(a.name)}</div>
-          <div class="app-sub">${esc(a.service)} · ${esc(a.area)} · ${esc(a.phone)} · ₹${a.charge}/visit</div>
-          <div class="app-sub">${esc(a.exp)}</div>
-        </div>
-        <span class="tag ${a.verificationStatus==='verified'?'tag-green':a.verificationStatus==='rejected'?'tag-red':'tag-amber'}">${esc(a.verificationStatus)}</span>
-      </div>
-      <div class="app-docs">
-        ${a.photoUrl?`<a class="btn btn-blue btn-sm" href="${esc(a.photoUrl)}" target="_blank">👤 View Photo</a>`:''}
-        ${a.idUrl?`<a class="btn btn-blue btn-sm" href="${esc(a.idUrl)}" target="_blank">🪪 View ID Proof</a>`:''}
-      </div>
-      ${a.verificationStatus==='pending'?`
-      <div class="app-actions">
-        <button class="btn btn-soft" onclick="adminReviewApp(${a.id},'verify')">✓ Verify & Approve</button>
-        <button class="btn btn-danger" onclick="adminReviewApp(${a.id},'reject')">✕ Reject</button>
-      </div>`:`<div class="small muted">Reviewed: ${esc(a.reviewedAt||'—')} ${a.rejectionReason?'· Reason: '+esc(a.rejectionReason):''}</div>`}
-    </div>`).join('');
-}
-
-function renderAdminWorkers(){
-  const workers=adminData.workers.filter(w=>w.verificationStatus==='verified');
-  if(!workers.length){ $('adminWorkersList').innerHTML='<div class="empty">No verified workers.</div>'; return; }
-  $('adminWorkersList').innerHTML=workers.map(w=>`
-    <div class="card row" style="margin-bottom:10px">
-      <div class="gap-row">
-        <div class="worker-avatar" style="width:42px;height:42px">${w.photoUrl?`<img src="${esc(w.photoUrl)}">`:(w.service||'WK').slice(0,2).toUpperCase()}</div>
-        <div>
-          <div class="bold">${esc(w.name)}</div>
-          <div class="small muted">${esc(w.service)} · ${esc(w.area)} · ${esc(w.phone)}</div>
-          <div class="small muted">⭐${w.rating} · ₹${w.charge}/visit · ${esc(w.exp)}</div>
-        </div>
-      </div>
-      <span class="tag ${w.status==='Online'?'tag-green':w.status==='Busy'?'tag-amber':'tag-muted'}">${esc(w.status)}</span>
-    </div>`).join('');
-}
-
-function renderAdminBookings(){
-  const bookings=adminData.bookings;
-  if(!bookings.length){ $('adminBookingsList').innerHTML='<div class="empty">No bookings yet.</div>'; return; }
-  $('adminBookingsList').innerHTML=[...bookings].reverse().map(b=>`
-    <div class="card row" style="margin-bottom:10px">
-      <div>
-        <div class="bold">${esc(b.service)} — ${esc(b.workerName)}</div>
-        <div class="small muted">Customer: ${esc(b.customerName)} (${esc(b.customerPhone)})</div>
-        <div class="small muted">${esc(b.customerAddress||'')} · ${esc(b.time||'')}</div>
-        <div class="tags" style="margin-top:4px">
-          <span class="tag tag-blue">${esc(b.status)}</span>
-          <span class="tag">${esc(b.paymentMethod)} · ${esc(b.paymentStatus)}</span>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div class="bold">${money(b.total)}</div>
-        <div class="small muted">#${b.id}</div>
-      </div>
-    </div>`).join('');
-}
-
-function renderAdminCustomers(){
-  const customers=adminData.customers;
-  if(!customers.length){ $('adminCustomersList').innerHTML='<div class="empty">No customers yet.</div>'; return; }
-  $('adminCustomersList').innerHTML=customers.map(c=>`
-    <div class="card row" style="margin-bottom:8px">
-      <div>
-        <div class="bold">${esc(c.name)}</div>
-        <div class="small muted">${esc(c.phone)} · ${esc(c.city||'Ambikapur')}</div>
-        ${c.address?`<div class="small muted">${esc(c.address)}</div>`:''}
-      </div>
-      <div class="small muted">${esc(c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):'—')}</div>
-    </div>`).join('');
-}
-
-function renderAdminTickets(){
-  const tickets=adminData.helpTickets;
-  if(!tickets.length){ $('adminTicketsList').innerHTML='<div class="empty">No support tickets.</div>'; return; }
-  $('adminTicketsList').innerHTML=[...tickets].reverse().map(t=>`
-    <div class="card" style="margin-bottom:10px">
-      <div class="row" style="margin-bottom:8px">
-        <div class="small bold">📞 ${esc(t.phone||'—')}</div>
-        <div class="small muted">${esc(t.createdAt?new Date(t.createdAt).toLocaleString('en-IN'):'')}</div>
-      </div>
-      <div class="small" style="background:#f9fafb;padding:8px;border-radius:6px;margin-bottom:6px"><b>Q:</b> ${esc(t.message)}</div>
-      <div class="small" style="background:var(--brand-bg);padding:8px;border-radius:6px"><b>A:</b> ${esc(t.reply)}</div>
-    </div>`).join('');
-}
-
-async function adminReviewApp(id,action){
-  const reason=action==='reject'?prompt('Rejection reason (optional):','Documents not clear')||'Documents not clear':'';
+async function pollTrack(bookingId){
   try{
-    await api(`/api/admin/worker-applications/${id}/${action}`,{
-      method:'POST',headers:headers(true),
-      body:JSON.stringify({reason})
-    });
-    toast(action==='verify'?'Worker verified and approved!':'Application rejected');
-    await loadAdminDash();
-  }catch(e){ toast(e.message); }
+    let d=await api(`/api/bookings/${bookingId}/track`);
+    qs("trackWho").textContent=`${d.service} · ${d.workerName}`;
+    qs("trackStatus").textContent=d.status.replace(/_/g," ");
+    qs("trackDist").textContent=d.distanceKm ?? "-";
+    qs("trackEta").textContent=d.etaMinutes ?? "-";
+    qs("trackCall").href="tel:"+(d.workerPhone||"");
+    let wl=d.workerLocation||AMBI, cl=d.customerLocation||AMBI;
+    if(!trackMarkers.worker){
+      trackMarkers.worker=L.marker([wl.lat,wl.lng],{icon:pinDivIcon("vanIcon","🔧")}).addTo(trackMapObj);
+      trackMarkers.cust=L.marker([cl.lat,cl.lng],{icon:pinDivIcon("pinIcon","🏠")}).addTo(trackMapObj);
+      trackMarkers.line=L.polyline([[wl.lat,wl.lng],[cl.lat,cl.lng]],{color:"#f2a71b",weight:3,dashArray:"6 8"}).addTo(trackMapObj);
+      trackMapObj.fitBounds(trackMarkers.line.getBounds(),{padding:[36,36]});
+    } else {
+      trackMarkers.worker.setLatLng([wl.lat,wl.lng]);
+      trackMarkers.cust.setLatLng([cl.lat,cl.lng]);
+      trackMarkers.line.setLatLngs([[wl.lat,wl.lng],[cl.lat,cl.lng]]);
+    }
+  }catch(e){ /* booking may have closed; keep last known view */ }
 }
 
-function adminLogout(){
-  adminKeySession='';
-  localStorage.removeItem('fixitAdminKey');
-  adminData=null;
-  $('adminLoginSection').style.display='block';
-  $('adminDashSection').style.display='none';
-  $('adminKey').value='';
-  toast('Admin logged out');
+/* ---- worker desk ---- */
+async function fileData(input){
+  let f=input.files[0];if(!f)return null;
+  if(f.size>2500000)throw Error("File under 2.5 MB only");
+  return await new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res({name:f.name,type:f.type,dataUrl:r.result});r.onerror=()=>rej(Error("File read failed"));r.readAsDataURL(f)});
+}
+async function workerRegister(){
+  let payload={name:qs("rName").value,phone:qs("rPhone").value,service:qs("rService").value,area:qs("rArea").value,charge:qs("rCharge").value,exp:qs("rExp").value,photo:await fileData(qs("rPhoto")),idProof:await fileData(qs("rId"))};
+  let d=await api("/api/worker/register",{method:"POST",headers:headers(),body:JSON.stringify(payload)});
+  workerPhone=d.application.phone;localStorage.fixitWorkerPhone=workerPhone;
+  toast("Submitted. Admin verification pending.");workerDashboard();
+}
+async function workerLogin(){
+  workerPhone=qs("wLoginPhone").value;
+  await api("/api/worker/login",{method:"POST",headers:headers(),body:JSON.stringify({phone:workerPhone})});
+  localStorage.fixitWorkerPhone=workerPhone;workerDashboard();
+}
+async function workerDashboard(){
+  if(!workerPhone)return;
+  let d=await api("/api/worker/dashboard?phone="+workerPhone);
+  let w=d.worker||d.application||{};
+  qs("wJobs").textContent=d.bookings.length;
+  qs("wEarn").textContent=money(d.bookings.filter(b=>b.status=="completed").reduce((s,b)=>s+b.base,0));
+  qs("wRating").textContent=w.rating||"-";qs("wStatus").textContent=w.verificationStatus||w.status||"-";
+  qs("workerProfile").innerHTML=d.worker?`<div class="row"><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)} · ${esc(w.phone)}</div></div><select onchange="updateWorkerStatus(this.value)"><option>${esc(w.status)}</option><option>Online</option><option>Offline</option><option>Busy</option></select></div>`:`<div class="empty">Verification ${esc(w.verificationStatus||"not started")}</div>`;
+  qs("workerSteps").innerHTML=stepsHtml(w);
+  qs("workerBookings").innerHTML=workerBookingHtml(d.bookings);
+  if(d.worker)drawWorkerMap(d.worker.lat,d.worker.lng);
+}
+function stepsHtml(w){let verified=w.verificationStatus=="verified";return["Personal details","Documents uploaded","Admin verification","Dashboard active"].map((s,i)=>`<div class="card row"><b>${s}</b><span class="tag ${i<2||verified?"green":"amber"}">${i<2||verified?"Done":"Pending"}</span></div>`).join("")}
+async function updateWorkerStatus(status){await api("/api/worker/profile",{method:"PATCH",headers:headers(),body:JSON.stringify({phone:workerPhone,status})});workerDashboard();boot()}
+function workerBookingHtml(list){
+  if(!list.length)return'<div class="empty">No incoming bookings.</div>';
+  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.customerName)} - ${esc(b.service)}</div><div class="meta">${esc(b.customerAddress)} · ${esc(b.note||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${money(b.total)}</span></div></div><a class="btn soft" href="tel:${esc(b.customerPhone)}">Call</a></div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="bookingAction(${b.id},'accept')">Accept</button><button class="btn dark" onclick="bookingAction(${b.id},'start')">On way</button><button class="btn warn" onclick="bookingAction(${b.id},'complete')">Done</button></div></article>`).join("");
+}
+async function bookingAction(id,act){
+  let d=await api(`/api/bookings/${id}/${act}`,{method:"POST",headers:headers(),body:JSON.stringify({workerPhone})});
+  if(act=="complete"&&d.whatsappReviewLink)window.open(d.whatsappReviewLink,"_blank");
+  toast(act=="complete"?"Completed. WhatsApp review link opened.":"Booking updated");
+  workerDashboard();boot();
+}
+
+/* ---- worker live location sharing ---- */
+function toggleShareLocation(){
+  if(shareWatchId){
+    navigator.geolocation.clearWatch(shareWatchId);shareWatchId=null;
+    qs("shareToggle").classList.remove("on");qs("shareDot").classList.remove("live");qs("shareLabel").textContent="Live location off";
+    return;
+  }
+  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
+  if(!workerPhone){toast("Login as a worker first");return}
+  qs("shareToggle").classList.add("on");qs("shareDot").classList.add("live");qs("shareLabel").textContent="Sharing live location";
+  let last=0;
+  shareWatchId=navigator.geolocation.watchPosition(async pos=>{
+    let now=Date.now();if(now-last<4000)return;last=now;
+    try{
+      await api("/api/worker/profile",{method:"PATCH",headers:headers(),body:JSON.stringify({phone:workerPhone,lat:pos.coords.latitude,lng:pos.coords.longitude})});
+      drawWorkerMap(pos.coords.latitude,pos.coords.longitude);
+    }catch(e){}
+  },()=>toast("Could not read your location"),{enableHighAccuracy:true,maximumAge:5000});
+}
+function drawWorkerMap(lat,lng){
+  if(lat==null||lng==null)return;
+  if(!workerMapObj){
+    workerMapObj=L.map("workerMap",{zoomControl:false,attributionControl:false});
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(workerMapObj);
+    workerMapObj.setView([lat,lng],14);
+  }
+  setTimeout(()=>workerMapObj.invalidateSize(),80);
+  if(!workerMapMarker){workerMapMarker=L.marker([lat,lng],{icon:pinDivIcon("vanIcon","🔧")}).addTo(workerMapObj)}
+  else workerMapMarker.setLatLng([lat,lng]);
+  workerMapObj.panTo([lat,lng]);
+}
+
+/* ---- customer help chat ---- */
+async function sendHelp(){
+  let msg=qs("chatInput").value.trim();if(!msg)return;
+  qs("chatBox").innerHTML+=`<div class="chatMsg me">${esc(msg)}</div>`;
+  let d=await api("/api/help/chat",{method:"POST",headers:headers(),body:JSON.stringify({phone:currentCustomer.phone,message:msg})});
+  qs("chatBox").innerHTML+=`<div class="chatMsg">${esc(d.reply)}</div>`;
+  qs("chatInput").value="";qs("chatBox").scrollTop=qs("chatBox").scrollHeight;
+}
+
+/* ---- admin ---- */
+async function adminLogin(){
+  adminKey=qs("adminKey").value;localStorage.fixitAdminKey=adminKey;
+  await api("/api/admin/login",{method:"POST",headers:headers(true),body:"{}"});
+  loadAdmin();
+}
+async function loadAdmin(){
+  let d=await api("/api/admin/dashboard",{headers:headers(true)});
+  qs("adminLogin").style.display="none";qs("adminDash").style.display="block";
+  qs("aCustomers").textContent=d.customers.length;qs("aWorkers").textContent=d.workers.length;
+  qs("aPending").textContent=d.workerApplications.filter(a=>a.verificationStatus=="pending").length;
+  qs("aBookings").textContent=d.bookings.length;
+  qs("adminApps").innerHTML=d.workerApplications.length?d.workerApplications.map(a=>`<div class="card row"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.service)} · ${esc(a.phone)} · ${esc(a.verificationStatus)}</div><a href="${esc(a.idUrl)}" target="_blank">View ID</a></div>${a.verificationStatus=="pending"?`<div><button class="btn primary" onclick="reviewApp(${a.id},'verify')">Verify</button> <button class="btn danger" onclick="reviewApp(${a.id},'reject')">Reject</button></div>`:""}</div>`).join(""):'<div class="empty">No applications</div>';
+  qs("adminBookings").innerHTML=bookingCards(d.bookings);
+  drawAdminMap(d.workers);
+}
+async function reviewApp(id,action){
+  await api(`/api/admin/worker-applications/${id}/${action}`,{method:"POST",headers:headers(true),body:JSON.stringify({reason:"Documents not clear"})});
+  toast("Application updated");loadAdmin();boot();
+}
+function drawAdminMap(list){
+  if(!adminMapObj){
+    adminMapObj=L.map("adminMap").setView([AMBI.lat,AMBI.lng],12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap"}).addTo(adminMapObj);
+  }
+  setTimeout(()=>adminMapObj.invalidateSize(),80);
+  let seen=new Set();
+  list.forEach(w=>{
+    if(w.lat==null||w.lng==null)return;
+    seen.add(w.id);
+    let cls=w.status=="Online"?"green":w.status=="Busy"?"amber":"grey";
+    let color=w.status=="Online"?"#0f7a6c":w.status=="Busy"?"#f2a71b":"#9aa4ad";
+    let html=`<div style="background:${color};color:#fff;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800">${esc((w.name||"?").slice(0,1))}</div>`;
+    let icon=L.divIcon({className:"",html,iconSize:[28,28],iconAnchor:[14,14]});
+    if(adminMapMarkers[w.id]){adminMapMarkers[w.id].setLatLng([w.lat,w.lng]).setIcon(icon)}
+    else{
+      adminMapMarkers[w.id]=L.marker([w.lat,w.lng],{icon}).addTo(adminMapObj).bindPopup(`<b>${esc(w.name)}</b><br>${esc(w.service)} · ${esc(w.status)}`);
+    }
+  });
+  Object.keys(adminMapMarkers).forEach(id=>{if(!seen.has(Number(id))){adminMapObj.removeLayer(adminMapMarkers[id]);delete adminMapMarkers[id]}});
+}
+
+/* ---- reviews ---- */
+function openReview(id){reviewBookingId=id;qs("reviewModal").classList.add("open")}
+function closeReview(){qs("reviewModal").classList.remove("open")}
+async function submitReview(){
+  let tags=[...document.querySelectorAll('#reviewModal input[type=checkbox]:checked')].map(x=>x.value);
+  await api("/api/reviews",{method:"POST",headers:headers(),body:JSON.stringify({bookingId:reviewBookingId,rating:qs("revStars").value,tags,comment:qs("revComment").value})});
+  toast("Review submitted");closeReview();
 }
 </script>
 </body>
