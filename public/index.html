@@ -415,6 +415,7 @@ let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
 async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"API failed");return d}
 function headers(admin=false){let h={"Content-Type":"application/json"};if(admin)h["x-api-key"]=adminKey;return h}
 function toast(m){qs("toast").textContent=m;qs("toast").classList.add("show");setTimeout(()=>qs("toast").classList.remove("show"),2800)}
+window.addEventListener("unhandledrejection",e=>{toast((e.reason&&e.reason.message)||"Something went wrong. Please try again.");e.preventDefault();});
 
 function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -585,11 +586,26 @@ async function fileData(input){
   return await new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res({name:f.name,type:f.type,dataUrl:r.result});r.onerror=()=>rej(Error("File read failed"));r.readAsDataURL(f)});
 }
 async function workerRegister(){
-  let payload={name:qs("rName").value,phone:qs("rPhone").value,service:qs("rService").value,area:qs("rArea").value,charge:qs("rCharge").value,exp:qs("rExp").value,aadhaar:qs("rAadhaar").value,photo:await fileData(qs("rPhoto")),idProof:await fileData(qs("rId"))};
-  let d=await api("/api/worker/register",{method:"POST",headers:headers(),body:JSON.stringify(payload)});
-  workerPhone=d.application.phone;localStorage.fixitWorkerPhone=workerPhone;
-  toast("ID verified. You are now Online.");workerDashboard();
+  let btn=document.activeElement&&document.activeElement.tagName=="BUTTON"?document.activeElement:null;
+  try{
+    if(btn){btn.disabled=true;btn.dataset.label=btn.textContent;btn.textContent="Submitting...";}
+    if(!qs("rName").value.trim())throw Error("Please enter your name");
+    if(phone10(qs("rPhone").value).length!==10)throw Error("Please enter a valid 10 digit phone number");
+    if(!qs("rService").value)throw Error("Please choose a service");
+    if(!qs("rCharge").value||Number(qs("rCharge").value)<50)throw Error("Please enter a valid charge (minimum 50)");
+    if(!qs("rPhoto").files[0])throw Error("Please choose a photo");
+    if(!qs("rId").files[0])throw Error("Please choose your ID proof (Aadhaar card photo/PDF)");
+    let payload={name:qs("rName").value,phone:qs("rPhone").value,service:qs("rService").value,area:qs("rArea").value,charge:qs("rCharge").value,exp:qs("rExp").value,aadhaar:qs("rAadhaar").value,photo:await fileData(qs("rPhoto")),idProof:await fileData(qs("rId"))};
+    let d=await api("/api/worker/register",{method:"POST",headers:headers(),body:JSON.stringify(payload)});
+    workerPhone=d.application.phone;localStorage.fixitWorkerPhone=workerPhone;
+    toast("ID verified. You are now Online.");workerDashboard();
+  }catch(e){
+    toast(e.message||"Could not submit for verification. Please check the details and try again.");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=btn.dataset.label;}
+  }
 }
+function phone10(v){return String(v||"").replace(/[^\d]/g,"").slice(-10)}
 async function workerLogin(){
   workerPhone=qs("wLoginPhone").value;
   await api("/api/worker/login",{method:"POST",headers:headers(),body:JSON.stringify({phone:workerPhone})});
