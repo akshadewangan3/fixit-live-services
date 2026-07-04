@@ -19,8 +19,7 @@
         <button onclick="loadAdminDashboard()">Authenticate & Load System</button>
         <pre id="output" style="margin-top: 20px; color: #10b981; background: #0f172a; padding: 10px; border-radius: 5px; max-height: 200px; overflow: auto;"></pre>
     </div>
-
-    <script>
+ <script>
         async function loadAdminDashboard() {
             const key = document.getElementById('apiKey').value;
             const res = await fetch('/api/v1/admin/dashboard', {
