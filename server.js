@@ -33,14 +33,9 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
 const services = ["Electrician", "Plumber", "Carpenter", "AC Repair", "Cleaning"];
 
-const defaultWorkers = [
-  { id: 1, name: "Ramesh Kumar", service: "Electrician", charge: 300, phone: "9876543210", rating: 4.8, exp: "7 yrs, wiring, fuse and switchboard work", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1226, lng: 83.1956 },
-  { id: 2, name: "Suresh Patel", service: "Plumber", charge: 250, phone: "9123456780", rating: 4.5, exp: "5 yrs, leakage and bathroom fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1268, lng: 83.1814 },
-  { id: 3, name: "Mohan Verma", service: "Electrician", charge: 350, phone: "9988776655", rating: 4.7, exp: "10 yrs, commercial and home wiring", area: "Darima", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1841, lng: 83.2425 },
-  { id: 4, name: "Lakshmi Devi", service: "Cleaning", charge: 400, phone: "9871234560", rating: 4.9, exp: "3 yrs, deep cleaning and kitchen cleaning", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1162, lng: 83.2051 },
-  { id: 5, name: "Rajesh Singh", service: "Carpenter", charge: 500, phone: "9765432100", rating: 4.6, exp: "8 yrs, furniture, doors and fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1329, lng: 83.1993 },
-  { id: 6, name: "Dinesh Gupta", service: "AC Repair", charge: 600, phone: "9654321098", rating: 4.4, exp: "6 yrs, all AC brands and gas refill", area: "Ambikapur", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1084, lng: 83.1882 }
-];
+// NOTE: This app ships with NO demo/fake workers. Every worker that appears
+// on the site must come through the real registration + verification flow.
+const defaultWorkers = [];
 
 const defaultDb = {
   customers: [],
@@ -50,6 +45,15 @@ const defaultDb = {
   reviews: [],
   helpTickets: []
 };
+
+// Phone numbers of the old sample/fake workers that used to ship with this
+// project (Ramesh Kumar, Suresh Patel, Mohan Verma, Lakshmi Devi, Rajesh
+// Singh, Dinesh Gupta). If your existing data/db.json still has these from
+// before, they are stripped out automatically here so you don't have to
+// manually edit the data file on your server.
+const RETIRED_FAKE_WORKER_PHONES = new Set([
+  "9876543210", "9123456780", "9988776655", "9871234560", "9765432100", "9654321098"
+]);
 
 function ensureDb() {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -62,15 +66,17 @@ function readDb() {
   const raw = JSON.parse(fs.readFileSync(dbPath, "utf8"));
   const db = { ...defaultDb, ...raw };
   db.customers = Array.isArray(db.customers) ? db.customers : [];
-  db.workers = (Array.isArray(db.workers) ? db.workers : []).map(worker => ({
-    verificationStatus: "verified",
-    photoUrl: "",
-    idUrl: "",
-    lat: 23.1226 + (Number(worker.id || 1) * 0.002),
-    lng: 83.1956 + (Number(worker.id || 1) * 0.002),
-    ...worker,
-    status: worker.status === "Available" ? "Online" : worker.status === "Busy" ? "Busy" : (worker.status || "Offline")
-  }));
+  db.workers = (Array.isArray(db.workers) ? db.workers : [])
+    .filter(worker => !RETIRED_FAKE_WORKER_PHONES.has(phone10(worker.phone)))
+    .map(worker => ({
+      verificationStatus: "verified",
+      photoUrl: "",
+      idUrl: "",
+      lat: 23.1226 + (Number(worker.id || 1) * 0.002),
+      lng: 83.1956 + (Number(worker.id || 1) * 0.002),
+      ...worker,
+      status: worker.status === "Available" ? "Online" : worker.status === "Busy" ? "Busy" : (worker.status || "Offline")
+    }));
   db.workerApplications = Array.isArray(db.workerApplications) ? db.workerApplications : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
   db.reviews = Array.isArray(db.reviews) ? db.reviews : [];
@@ -398,7 +404,11 @@ async function createRazorpayOrder(amount, receipt) {
 
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const routePath = url.pathname === "/" ? "/index.html" : url.pathname === "/admin" ? "/admin.html" : url.pathname;
+  // The admin panel is intentionally NOT served from this website anymore.
+  // It now runs as its own separate mini-server (see the /admin-panel
+  // folder) so it can be hosted on a different machine/port/domain than
+  // the public customer + worker site.
+  const routePath = url.pathname === "/" ? "/index.html" : url.pathname;
   const pathname = decodeURIComponent(routePath);
   const filePath = path.normalize(path.join(publicDir, pathname));
   if (!filePath.startsWith(publicDir)) return sendError(res, 403, "Forbidden");
@@ -686,8 +696,28 @@ async function handleApi(req, res) {
   sendError(res, 404, "API route not found");
 }
 
+// The admin panel now runs as a separate mini-server (see /admin-panel),
+// possibly on a different domain/port. These CORS headers let that
+// separate admin panel call this site's /api/admin/* endpoints from the
+// browser. Every admin endpoint still requires the FIXIT_API_KEY via the
+// x-api-key header (see requireAdmin), so opening this up cross-origin
+// does not expose private data to random websites.
+function applyAdminCors(req, res) {
+  if (!req.url.startsWith("/api/admin/")) return false;
+  res.setHeader("Access-Control-Allow-Origin", process.env.FIXIT_ADMIN_ORIGIN || "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return true;
+  }
+  return false;
+}
+
 const server = http.createServer(async (req, res) => {
   try {
+    if (applyAdminCors(req, res)) return;
     if (req.url.startsWith("/api/")) await handleApi(req, res);
     else serveStatic(req, res);
   } catch (error) {
