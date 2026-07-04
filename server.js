@@ -207,11 +207,22 @@ function makeWorkerApplication(input = {}) {
   };
 }
 
+function haversineKm(a, b) {
+  if (!a || !b || !Number.isFinite(Number(a.lat)) || !Number.isFinite(Number(b.lat))) return null;
+  const R = 6371;
+  const dLat = (Number(b.lat) - Number(a.lat)) * Math.PI / 180;
+  const dLng = (Number(b.lng) - Number(a.lng)) * Math.PI / 180;
+  const lat1 = Number(a.lat) * Math.PI / 180, lat2 = Number(b.lat) * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)) * 10) / 10;
+}
+
 function makeBooking(worker, customer = {}, payment = {}) {
   const base = Number(worker.charge || 0);
   const commission = Math.round(base * COMMISSION_RATE);
   const total = base + commission;
   const now = new Date();
+  const custLat = Number(customer.lat), custLng = Number(customer.lng);
   return {
     id: Date.now(),
     workerId: worker.id,
@@ -219,6 +230,7 @@ function makeBooking(worker, customer = {}, payment = {}) {
     workerPhone: worker.phone,
     service: worker.service,
     workerLocation: { lat: worker.lat, lng: worker.lng, area: worker.area },
+    customerLocation: Number.isFinite(custLat) && Number.isFinite(custLng) ? { lat: custLat, lng: custLng } : null,
     base,
     commission,
     total,
@@ -440,7 +452,7 @@ async function handleApi(req, res) {
     const existingCustomer = db.customers.findIndex(c => c.phone === customer.phone);
     if (existingCustomer >= 0) db.customers[existingCustomer] = { ...db.customers[existingCustomer], ...customer };
     else db.customers.push(customer);
-    const booking = makeBooking(worker, customer, {
+    const booking = makeBooking(worker, { ...customer, lat: body.customer?.lat, lng: body.customer?.lng }, {
       method: body.paymentMethod === "upi" ? "upi" : body.paymentMethod === "razorpay" ? "razorpay" : "cash",
       status: body.paymentMethod === "razorpay" ? "paid" : "pending"
     });
@@ -469,6 +481,27 @@ async function handleApi(req, res) {
     }
     writeDb(db);
     return sendJson(res, 200, { booking, whatsappReviewLink: booking.whatsappReviewLink || "" });
+  }
+
+  const trackMatch = url.pathname.match(/^\/api\/bookings\/(\d+)\/track$/);
+  if (req.method === "GET" && trackMatch) {
+    const booking = db.bookings.find(b => Number(b.id) === Number(trackMatch[1]));
+    if (!booking) return sendError(res, 404, "Booking not found");
+    const worker = db.workers.find(w => Number(w.id) === Number(booking.workerId));
+    const workerLocation = worker ? { lat: worker.lat, lng: worker.lng, status: worker.status } : booking.workerLocation;
+    const distanceKm = haversineKm(workerLocation, booking.customerLocation);
+    return sendJson(res, 200, {
+      status: booking.status,
+      service: booking.service,
+      workerName: booking.workerName,
+      workerPhone: booking.workerPhone,
+      customerName: booking.customerName,
+      customerAddress: booking.customerAddress,
+      workerLocation,
+      customerLocation: booking.customerLocation,
+      distanceKm,
+      etaMinutes: distanceKm === null ? null : Math.max(2, Math.round((distanceKm / 22) * 60))
+    });
   }
 
   if (req.method === "POST" && url.pathname === "/api/reviews") {
