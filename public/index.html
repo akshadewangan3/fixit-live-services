@@ -165,7 +165,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
     <button id="tabLanding" class="active" onclick="show('landing')">Dispatch</button>
     <button id="tabCustomer" onclick="show('customer')">Customer</button>
     <button id="tabWorker" onclick="show('worker')">Worker</button>
-    <button id="tabAdmin" onclick="show('admin')">Admin</button>
+    <button onclick="location.href='admin.html'">Admin</button>
   </nav>
   <div class="sync"><span id="syncDot" class="dot"></span><span id="sync">Connecting</span></div>
 </div></header>
@@ -208,8 +208,8 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
       <div class="go">Open worker app <em>&rarr;</em></div>
     </article>
 
-    <article class="ticket adm" onclick="show('admin')">
-      <div class="stamp">ADMIN<br>DESK</div>
+    <article class="ticket adm" onclick="location.href='admin.html'">
+      <div class="stamp">ADMIN<br>FILE</div>
       <div class="tIcon">03</div>
       <span class="code">TICKET · ADMIN</span>
       <h3>Run the board</h3>
@@ -217,7 +217,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
       <div class="barcode">
         <span style="height:55%"></span><span style="height:90%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:100%"></span><span style="height:45%"></span><span style="height:60%"></span><span style="height:80%"></span><span style="height:30%"></span><span style="height:95%"></span>
       </div>
-      <div class="go">Open admin console <em>&rarr;</em></div>
+      <div class="go">Open admin.html <em>&rarr;</em></div>
     </article>
   </div>
 
@@ -246,7 +246,11 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
         <div id="services" class="chips"></div>
       </div>
       <div class="panel" style="padding:0;border:0;box-shadow:none;margin-top:6px">
-        <div class="head"><div><h3 class="title" style="font-size:20px">Verified workers</h3><div class="sub" id="workerSub">Showing all.</div></div><div class="row"><input id="search" placeholder="Search service, worker, area" oninput="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px;padding:0 10px"><select id="area" onchange="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px"></select></div></div>
+        <div class="head"><div><h3 class="title" style="font-size:20px">Book by profession</h3><div class="sub" id="workerSub">Worker identity stays private until the job is assigned.</div></div><div class="row"><input id="search" placeholder="Search service or area" oninput="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px;padding:0 10px"><select id="area" onchange="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px"></select></div></div>
+        <div class="card row" style="margin-bottom:12px">
+          <div><b>Customer location</b><div class="meta" id="customerGeoNote">Use your current location so only workers within 50 km can accept.</div></div>
+          <button class="btn soft" onclick="useCustomerLocation()">Use current location</button>
+        </div>
         <div id="workers" class="grid3"></div>
       </div>
     </div>
@@ -282,7 +286,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
       <div>
         <h3>Login</h3>
         <div class="field"><label>Worker phone</label><input id="wLoginPhone" maxlength="10"></div>
-        <button class="btn dark" onclick="workerLogin()">Login</button>
+        <div class="row"><button class="btn dark" onclick="workerLogin()">Login</button><button class="btn soft" onclick="workerLogout()">Logout</button></div>
         <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
         <h3>New worker registration</h3>
         <div class="field"><label>Name</label><input id="rName"></div>
@@ -307,6 +311,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:.01em}
           <div class="stat"><strong id="wStatus">-</strong><span>Status</span></div>
         </div>
         <div id="workerProfile" class="card" style="margin-top:14px"></div>
+        <div id="workerTools" class="card" style="margin-top:12px;display:none"></div>
         <div id="workerMap" class="mapBoxSm" style="margin-top:12px"></div>
         <div id="workerSteps" class="list" style="margin-top:12px"></div>
         <h3>Incoming / active bookings</h3>
@@ -389,12 +394,20 @@ const qs=id=>document.getElementById(id);
 const money=v=>"Rs. "+Number(v||0).toLocaleString("en-IN");
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const AMBI={lat:23.1226,lng:83.1956};
+const distanceKm=(a,b)=>{
+  if(!a||!b||!Number.isFinite(Number(a.lat))||!Number.isFinite(Number(b.lat)))return null;
+  const R=6371,dLat=(Number(b.lat)-Number(a.lat))*Math.PI/180,dLng=(Number(b.lng)-Number(a.lng))*Math.PI/180;
+  const lat1=Number(a.lat)*Math.PI/180,lat2=Number(b.lat)*Math.PI/180;
+  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))*10)/10;
+};
 
 let services=[],workers=[],settings={},selected="",currentWorker=null;
 let currentCustomer=JSON.parse(localStorage.fixitCustomer||"{}");
 let workerPhone=localStorage.fixitWorkerPhone||"";
 let adminKey=localStorage.fixitAdminKey||"";
 let customerBookings=[],reviewBookingId=new URLSearchParams(location.search).get("review");
+let customerGeo=JSON.parse(localStorage.fixitCustomerGeo||"null");
 let bookingGeo=null,shareWatchId=null,trackTimer=null,trackMapObj=null,trackMarkers={};
 let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
 
@@ -425,9 +438,8 @@ async function boot(){
 boot().catch(e=>toast(e.message));
 
 function renderPreview(){
-  qs("workersPreview").innerHTML=workers.slice(0,3).map(w=>`<article class="card"><div class="row"><div class="row"><div class="avatar">${avatar(w)}</div><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)}</div></div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div></article>`).join("")||'<div class="empty">No workers yet.</div>';
+  qs("workersPreview").innerHTML=workers.slice(0,3).map(w=>`<article class="card"><div class="row"><div><div class="name">${esc(w.service)} available</div><div class="meta">${esc(w.area)} area - ${money(w.charge)} base</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div></article>`).join("")||'<div class="empty">No workers yet.</div>';
 }
-
 function renderServices(){
   qs("services").innerHTML=["",...services].map(s=>`<button class="chip ${selected==s?"active":""}" onclick="selected='${s}';renderServices();renderWorkers()"><span class="icon">${s?s.slice(0,2).toUpperCase():"ALL"}</span><b>${esc(s||"All services")}</b><div class="meta">${workers.filter(w=>!s||w.service==s).length} workers</div></button>`).join("");
 }
@@ -436,14 +448,27 @@ function avatar(w){return w.photoUrl?`<img src="${esc(w.photoUrl)}">`:(w.service
 
 function renderWorkers(){
   let q=(qs("search").value||"").toLowerCase(),area=qs("area").value;
-  let list=workers.filter(w=>(!selected||w.service==selected)&&(!area||w.area==area)&&[w.name,w.service,w.area,w.exp].join(" ").toLowerCase().includes(q));
-  qs("workerSub").textContent=`${list.length} workers found`;
+  const maxKm=Number(settings.maxServiceRadiusKm||50);
+  let list=workers.filter(w=>(!selected||w.service==selected)&&(!area||w.area==area)&&[w.service,w.area].join(" ").toLowerCase().includes(q));
+  if(customerGeo)list=list.map(w=>({...w,distanceKm:distanceKm(w,customerGeo)})).filter(w=>w.distanceKm===null||w.distanceKm<=maxKm);
+  qs("workerSub").textContent=customerGeo?`${list.length} service options within ${maxKm} km`:`${list.length} service options. Add location for ${maxKm} km filtering.`;
   qs("workers").innerHTML=list.length?list.map(w=>{
     let fee=Math.round(w.charge*(settings.commissionRate||.1)),total=w.charge+fee;
-    return `<article class="card worker"><div class="row"><div class="row"><div class="avatar">${avatar(w)}</div><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)}</div></div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag">${w.rating} star</span><span class="tag blue">Location live</span></div><div class="exp">${esc(w.exp)}</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book</button></div></article>`;
+    let dist=w.distanceKm==null?"Set location":`${w.distanceKm} km away`;
+    return `<article class="card worker"><div class="row"><div><div class="name">${esc(w.service)}</div><div class="meta">${esc(w.area)} area</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag blue">${esc(dist)}</span><span class="tag">Within ${maxKm} km radar</span></div><div class="exp">Book this profession. FixIt assigns a verified nearby worker privately, like a ride booking.</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book worker</button></div></article>`;
   }).join(""):'<div class="empty" style="grid-column:1/-1">No worker found.</div>';
 }
 
+function useCustomerLocation(){
+  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
+  qs("customerGeoNote").textContent="Reading your current location...";
+  navigator.geolocation.getCurrentPosition(pos=>{
+    customerGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    localStorage.fixitCustomerGeo=JSON.stringify(customerGeo);
+    qs("customerGeoNote").textContent=`Location ready. Showing workers inside ${settings.maxServiceRadiusKm||50} km.`;
+    renderWorkers();
+  },()=>{qs("customerGeoNote").textContent="Location permission denied. You can still book using the area centre.";toast("Location permission denied")},{enableHighAccuracy:true,timeout:8000});
+}
 function fillCustomer(){
   qs("cName").value=currentCustomer.name||"";qs("cPhone").value=currentCustomer.phone||"";
   qs("cAddress").value=currentCustomer.address||"";qs("cCity").value=currentCustomer.city||"Ambikapur";
@@ -472,31 +497,29 @@ async function loadCustomer(){
 function bookingCards(list){
   if(!list.length)return'<div class="empty">No bookings yet.</div>';
   const trackable=["accepted","on_the_way","requested"];
-  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.service)} with ${esc(b.workerName)}</div><div class="meta">${esc(b.customerAddress||"")} · ${esc(b.time||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${esc(b.paymentMethod)} / ${esc(b.paymentStatus)}</span></div></div><b>${money(b.total)}</b></div><div class="row" style="margin-top:10px">${trackable.includes(b.status)?`<button class="btn amberBtn" onclick="openTrack(${b.id})">Track live</button>`:""}<a class="btn soft" href="tel:${esc(b.workerPhone)}">Call worker</a>${b.status=="completed"?`<button class="btn primary" onclick="openReview(${b.id})">Review</button>`:""}</div></article>`).join("");
+  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.service)} booking</div><div class="meta">${esc(b.customerAddress||"")} - ${esc(b.time||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${esc(b.paymentMethod)} / ${esc(b.paymentStatus)}</span></div></div><b>${money(b.total)}</b></div><div class="row" style="margin-top:10px">${trackable.includes(b.status)?`<button class="btn amberBtn" onclick="openTrack(${b.id})">Track live</button>`:""}${b.status=="completed"?`<button class="btn primary" onclick="openReview(${b.id})">Review</button>`:""}</div></article>`).join("");
 }
-
 /* ---- booking modal ---- */
 function openBooking(id){
   currentWorker=workers.find(w=>w.id==id);
   let fee=Math.round(currentWorker.charge*(settings.commissionRate||.1)),total=currentWorker.charge+fee;
   qs("bName").value=currentCustomer.name||"";qs("bPhone").value=currentCustomer.phone||"";qs("bAddress").value=currentCustomer.address||"";
-  qs("bookWorker").innerHTML=`<div class="row"><div class="avatar">${avatar(currentWorker)}</div><div><div class="name">${esc(currentWorker.name)}</div><div class="meta">${esc(currentWorker.service)} · ${esc(currentWorker.area)} · ${currentWorker.rating} star</div></div></div>`;
+  qs("bookWorker").innerHTML=`<div><div class="name">${esc(currentWorker.service)}</div><div class="meta">${esc(currentWorker.area)} area - verified nearby worker assigned privately</div></div>`;
   qs("sBase").textContent=money(currentWorker.charge);qs("sFee").textContent=money(fee);qs("sTotal").textContent=money(total);
   qs("rzpBtn").disabled=!settings.razorpayEnabled;
-  bookingGeo=null;
-  qs("geoNote").textContent="Locating you so your worker can find you...";
-  if(navigator.geolocation){
+  bookingGeo=customerGeo;
+  qs("geoNote").textContent=bookingGeo?`Customer location ready. Worker must be within ${settings.maxServiceRadiusKm||50} km to accept.`:"Locating you so your worker can find you...";
+  if(!bookingGeo&&navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      pos=>{bookingGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};qs("geoNote").textContent="Your location is ready to share for live tracking.";},
-      ()=>{qs("geoNote").textContent="Location permission denied — tracking will use the workshop's area centre instead.";},
-      {timeout:6000}
+      pos=>{bookingGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};customerGeo=bookingGeo;localStorage.fixitCustomerGeo=JSON.stringify(customerGeo);qs("geoNote").textContent="Your location is ready for live tracking and 50 km matching.";renderWorkers();},
+      ()=>{qs("geoNote").textContent="Location permission denied - tracking will use the city centre.";},
+      {enableHighAccuracy:true,timeout:6000}
     );
-  } else {
-    qs("geoNote").textContent="This browser can't share location — tracking will use the area centre.";
+  } else if(!navigator.geolocation) {
+    qs("geoNote").textContent="This browser can't share location - tracking will use the city centre.";
   }
   qs("bookingModal").classList.add("open");
-}
-function closeModal(){qs("bookingModal").classList.remove("open")}
+}function closeModal(){qs("bookingModal").classList.remove("open")}
 function customerFromModal(){return{name:qs("bName").value,phone:qs("bPhone").value,address:qs("bAddress").value,city:qs("cCity").value,note:qs("bNote").value,lat:bookingGeo?bookingGeo.lat:AMBI.lat,lng:bookingGeo?bookingGeo.lng:AMBI.lng}}
 
 async function book(method){
@@ -535,7 +558,7 @@ function closeTrack(){qs("trackModal").classList.remove("open");clearInterval(tr
 async function pollTrack(bookingId){
   try{
     let d=await api(`/api/bookings/${bookingId}/track`);
-    qs("trackWho").textContent=`${d.service} · ${d.workerName}`;
+    qs("trackWho").textContent=`${d.service} booking`;
     qs("trackStatus").textContent=d.status.replace(/_/g," ");
     qs("trackDist").textContent=d.distanceKm ?? "-";
     qs("trackEta").textContent=d.etaMinutes ?? "-";
@@ -578,18 +601,42 @@ async function workerDashboard(){
   qs("wJobs").textContent=d.bookings.length;
   qs("wEarn").textContent=money(d.bookings.filter(b=>b.status=="completed").reduce((s,b)=>s+b.base,0));
   qs("wRating").textContent=w.rating||"-";qs("wStatus").textContent=w.verificationStatus||w.status||"-";
-  qs("workerProfile").innerHTML=d.worker?`<div class="row"><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} · ${esc(w.area)} · ${esc(w.phone)}</div></div><select onchange="updateWorkerStatus(this.value)"><option>${esc(w.status)}</option><option>Online</option><option>Offline</option><option>Busy</option></select></div>`:`<div class="empty">Verification ${esc(w.verificationStatus||"not started")}</div>`;
+  qs("workerProfile").innerHTML=d.worker?`<div class="row"><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} - ${esc(w.area)} - ${esc(w.phone)}</div></div><select id="wStatusSelect"><option>${esc(w.status)}</option><option>Online</option><option>Offline</option><option>Busy</option></select></div>`:`<div class="empty">Verification ${esc(w.verificationStatus||"not started")}</div>`;
+  qs("workerTools").style.display=d.worker?"block":"none";
+  if(d.worker){
+    qs("workerTools").innerHTML=`<div class="grid3"><div class="field"><label>Price</label><input id="wCharge" type="number" min="50" value="${esc(w.charge)}"></div><div class="field"><label>Location area</label><input id="wArea" value="${esc(w.area)}"></div><div class="field"><label>Service status</label><button class="btn primary" style="width:100%;margin-top:22px" onclick="saveWorkerProfile()">Save changes</button></div></div><div class="row"><button class="btn soft" onclick="useWorkerLocation()">Update current location</button><button class="btn danger" onclick="workerLogout()">Logout</button></div><div class="meta" style="margin-top:8px">Keep price, area, and live location correct so only nearby customers can book and the 50 km accept check passes.</div>`;
+  }
   qs("workerSteps").innerHTML=stepsHtml(w);
   qs("workerBookings").innerHTML=workerBookingHtml(d.bookings);
   if(d.worker)drawWorkerMap(d.worker.lat,d.worker.lng);
-}
-function stepsHtml(w){let verified=w.verificationStatus=="verified";return["Personal details","Documents uploaded","Admin verification","Dashboard active"].map((s,i)=>`<div class="card row"><b>${s}</b><span class="tag ${i<2||verified?"green":"amber"}">${i<2||verified?"Done":"Pending"}</span></div>`).join("")}
+}function stepsHtml(w){let verified=w.verificationStatus=="verified";return["Personal details","Documents uploaded","Admin verification","Dashboard active"].map((s,i)=>`<div class="card row"><b>${s}</b><span class="tag ${i<2||verified?"green":"amber"}">${i<2||verified?"Done":"Pending"}</span></div>`).join("")}
 async function updateWorkerStatus(status){await api("/api/worker/profile",{method:"PATCH",headers:headers(),body:JSON.stringify({phone:workerPhone,status})});workerDashboard();boot()}
-function workerBookingHtml(list){
-  if(!list.length)return'<div class="empty">No incoming bookings.</div>';
-  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.customerName)} - ${esc(b.service)}</div><div class="meta">${esc(b.customerAddress)} · ${esc(b.note||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${money(b.total)}</span></div></div><a class="btn soft" href="tel:${esc(b.customerPhone)}">Call</a></div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="bookingAction(${b.id},'accept')">Accept</button><button class="btn dark" onclick="bookingAction(${b.id},'start')">On way</button><button class="btn warn" onclick="bookingAction(${b.id},'complete')">Done</button></div></article>`).join("");
+async function saveWorkerProfile(){
+  await api("/api/worker/profile",{method:"PATCH",headers:headers(),body:JSON.stringify({phone:workerPhone,status:qs("wStatusSelect").value,charge:qs("wCharge").value,area:qs("wArea").value})});
+  toast("Worker profile updated");workerDashboard();boot();
 }
-async function bookingAction(id,act){
+function useWorkerLocation(){
+  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
+  if(!workerPhone){toast("Login as a worker first");return}
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    await api("/api/worker/profile",{method:"PATCH",headers:headers(),body:JSON.stringify({phone:workerPhone,lat:pos.coords.latitude,lng:pos.coords.longitude})});
+    drawWorkerMap(pos.coords.latitude,pos.coords.longitude);toast("Worker location updated");boot();
+  },()=>toast("Could not read your location"),{enableHighAccuracy:true,timeout:8000});
+}
+function workerLogout(){
+  if(shareWatchId){navigator.geolocation.clearWatch(shareWatchId);shareWatchId=null}
+  workerPhone="";delete localStorage.fixitWorkerPhone;
+  qs("wLoginPhone").value="";qs("workerProfile").innerHTML='<div class="empty">Login to open your worker dashboard.</div>';qs("workerTools").style.display="none";qs("workerSteps").innerHTML="";qs("workerBookings").innerHTML='<div class="empty">No incoming bookings.</div>';
+  qs("wJobs").textContent="0";qs("wEarn").textContent=money(0);qs("wRating").textContent="-";qs("wStatus").textContent="-";toast("Worker logged out");
+}function workerBookingHtml(list){
+  if(!list.length)return'<div class="empty">No incoming bookings.</div>';
+  const maxKm=Number(settings.maxServiceRadiusKm||50);
+  return [...list].reverse().map(b=>{
+    const dist=distanceKm(b.workerLocation,b.customerLocation);
+    const over=dist!==null&&dist>maxKm;
+    return `<article class="card"><div class="row"><div><div class="name">${esc(b.customerName)} - ${esc(b.service)}</div><div class="meta">${esc(b.customerAddress)} - ${esc(b.note||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${money(b.total)}</span><span class="tag ${over?"danger":"green"}">${dist===null?"Location pending":dist+" km from customer"}</span></div></div><a class="btn soft" href="tel:${esc(b.customerPhone)}">Call</a></div><div class="row" style="margin-top:10px"><button class="btn primary" ${over?"disabled":""} onclick="bookingAction(${b.id},'accept')">Accept</button><button class="btn dark" onclick="bookingAction(${b.id},'start')">On way</button><button class="btn warn" onclick="bookingAction(${b.id},'complete')">Done</button><button class="btn danger" onclick="bookingAction(${b.id},'cancel')">Cancel</button></div></article>`;
+  }).join("");
+}async function bookingAction(id,act){
   let d=await api(`/api/bookings/${id}/${act}`,{method:"POST",headers:headers(),body:JSON.stringify({workerPhone})});
   if(act=="complete"&&d.whatsappReviewLink)window.open(d.whatsappReviewLink,"_blank");
   toast(act=="complete"?"Completed. WhatsApp review link opened.":"Booking updated");
