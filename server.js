@@ -27,6 +27,7 @@ loadEnv();
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_API_KEY = process.env.FIXIT_API_KEY || "change-this-secret";
 const COMMISSION_RATE = 0.1;
+const MAX_SERVICE_RADIUS_KM = 50;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
@@ -257,18 +258,15 @@ function makeBooking(worker, customer = {}, payment = {}) {
 function publicWorker(worker) {
   return {
     id: worker.id,
-    name: worker.name,
     service: worker.service,
     charge: worker.charge,
-    phone: worker.phone,
     rating: worker.rating,
-    exp: worker.exp,
     area: worker.area,
     status: worker.status,
     verificationStatus: worker.verificationStatus,
-    photoUrl: worker.photoUrl,
     lat: worker.lat,
-    lng: worker.lng
+    lng: worker.lng,
+    radiusKm: MAX_SERVICE_RADIUS_KM
   };
 }
 
@@ -342,7 +340,8 @@ async function createRazorpayOrder(amount, receipt) {
 
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
+  const routePath = url.pathname === "/" ? "/index.html" : url.pathname === "/admin" ? "/admin.html" : url.pathname;
+  const pathname = decodeURIComponent(routePath);
   const filePath = path.normalize(path.join(publicDir, pathname));
   if (!filePath.startsWith(publicDir)) return sendError(res, 403, "Forbidden");
   fs.readFile(filePath, (err, data) => {
@@ -376,6 +375,7 @@ async function handleApi(req, res) {
       workers: db.workers.filter(w => w.verificationStatus === "verified").map(publicWorker),
       settings: {
         commissionRate: COMMISSION_RATE,
+        maxServiceRadiusKm: MAX_SERVICE_RADIUS_KM,
         upiId: process.env.FIXIT_UPI_ID || "test@razorpay",
         merchantName: process.env.FIXIT_MERCHANT_NAME || "FixIt",
         razorpayKeyId: RAZORPAY_KEY_ID,
@@ -449,6 +449,13 @@ async function handleApi(req, res) {
     const worker = db.workers.find(w => Number(w.id) === Number(body.workerId) && w.verificationStatus === "verified");
     if (!worker) return sendError(res, 404, "Verified worker not found");
     const customer = sanitizeCustomer(body.customer || {});
+    const customerLocation = body.customer?.lat !== undefined && body.customer?.lng !== undefined
+      ? { lat: Number(body.customer.lat), lng: Number(body.customer.lng) }
+      : null;
+    const bookingDistanceKm = haversineKm({ lat: worker.lat, lng: worker.lng }, customerLocation);
+    if (bookingDistanceKm !== null && bookingDistanceKm > MAX_SERVICE_RADIUS_KM) {
+      return sendError(res, 400, `No ${worker.service} worker is within ${MAX_SERVICE_RADIUS_KM} km of this customer location`);
+    }
     const existingCustomer = db.customers.findIndex(c => c.phone === customer.phone);
     if (existingCustomer >= 0) db.customers[existingCustomer] = { ...db.customers[existingCustomer], ...customer };
     else db.customers.push(customer);
@@ -471,7 +478,13 @@ async function handleApi(req, res) {
     if (!booking) return sendError(res, 404, "Booking not found");
     const worker = db.workers.find(w => Number(w.id) === Number(booking.workerId));
     if (body.workerPhone && worker && worker.phone !== phone10(body.workerPhone)) return sendError(res, 403, "This booking is assigned to another worker");
-    if (action === "accept") updateBooking(booking, "accepted");
+    if (action === "accept") {
+      const acceptDistanceKm = haversineKm(worker ? { lat: worker.lat, lng: worker.lng } : booking.workerLocation, booking.customerLocation);
+      if (acceptDistanceKm !== null && acceptDistanceKm > MAX_SERVICE_RADIUS_KM) {
+        return sendError(res, 400, `Worker must be within ${MAX_SERVICE_RADIUS_KM} km to accept this booking`);
+      }
+      updateBooking(booking, "accepted");
+    }
     if (action === "start") updateBooking(booking, "on_the_way");
     if (action === "cancel") updateBooking(booking, "cancelled");
     if (action === "complete") {
@@ -500,6 +513,7 @@ async function handleApi(req, res) {
       workerLocation,
       customerLocation: booking.customerLocation,
       distanceKm,
+      maxServiceRadiusKm: MAX_SERVICE_RADIUS_KM,
       etaMinutes: distanceKm === null ? null : Math.max(2, Math.round((distanceKm / 22) * 60))
     });
   }
