@@ -30,12 +30,20 @@ const COMMISSION_RATE = 0.1;
 const MAX_SERVICE_RADIUS_KM = 50;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+const OTP_TTL_MS = 5 * 60 * 1000;
 
 const services = ["Electrician", "Plumber", "Carpenter", "AC Repair", "Cleaning"];
+const otpRequests = new Map();
+const otpTokens = new Map();
 
-// NOTE: This app ships with NO demo/fake workers. Every worker that appears
-// on the site must come through the real registration + verification flow.
-const defaultWorkers = [];
+const defaultWorkers = [
+  { id: 1, name: "Ramesh Kumar", service: "Electrician", charge: 300, phone: "9876543210", rating: 4.8, exp: "7 yrs, wiring, fuse and switchboard work", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1226, lng: 83.1956 },
+  { id: 2, name: "Suresh Patel", service: "Plumber", charge: 250, phone: "9123456780", rating: 4.5, exp: "5 yrs, leakage and bathroom fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1268, lng: 83.1814 },
+  { id: 3, name: "Mohan Verma", service: "Electrician", charge: 350, phone: "9988776655", rating: 4.7, exp: "10 yrs, commercial and home wiring", area: "Darima", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1841, lng: 83.2425 },
+  { id: 4, name: "Lakshmi Devi", service: "Cleaning", charge: 400, phone: "9871234560", rating: 4.9, exp: "3 yrs, deep cleaning and kitchen cleaning", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1162, lng: 83.2051 },
+  { id: 5, name: "Rajesh Singh", service: "Carpenter", charge: 500, phone: "9765432100", rating: 4.6, exp: "8 yrs, furniture, doors and fittings", area: "Ambikapur", status: "Online", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1329, lng: 83.1993 },
+  { id: 6, name: "Dinesh Gupta", service: "AC Repair", charge: 600, phone: "9654321098", rating: 4.4, exp: "6 yrs, all AC brands and gas refill", area: "Ambikapur", status: "Busy", verificationStatus: "verified", photoUrl: "", idUrl: "", lat: 23.1084, lng: 83.1882 }
+];
 
 const defaultDb = {
   customers: [],
@@ -45,15 +53,6 @@ const defaultDb = {
   reviews: [],
   helpTickets: []
 };
-
-// Phone numbers of the old sample/fake workers that used to ship with this
-// project (Ramesh Kumar, Suresh Patel, Mohan Verma, Lakshmi Devi, Rajesh
-// Singh, Dinesh Gupta). If your existing data/db.json still has these from
-// before, they are stripped out automatically here so you don't have to
-// manually edit the data file on your server.
-const RETIRED_FAKE_WORKER_PHONES = new Set([
-  "9876543210", "9123456780", "9988776655", "9871234560", "9765432100", "9654321098"
-]);
 
 function ensureDb() {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -66,17 +65,15 @@ function readDb() {
   const raw = JSON.parse(fs.readFileSync(dbPath, "utf8"));
   const db = { ...defaultDb, ...raw };
   db.customers = Array.isArray(db.customers) ? db.customers : [];
-  db.workers = (Array.isArray(db.workers) ? db.workers : [])
-    .filter(worker => !RETIRED_FAKE_WORKER_PHONES.has(phone10(worker.phone)))
-    .map(worker => ({
-      verificationStatus: "verified",
-      photoUrl: "",
-      idUrl: "",
-      lat: 23.1226 + (Number(worker.id || 1) * 0.002),
-      lng: 83.1956 + (Number(worker.id || 1) * 0.002),
-      ...worker,
-      status: worker.status === "Available" ? "Online" : worker.status === "Busy" ? "Busy" : (worker.status || "Offline")
-    }));
+  db.workers = (Array.isArray(db.workers) ? db.workers : []).map(worker => ({
+    verificationStatus: "verified",
+    photoUrl: "",
+    idUrl: "",
+    lat: 23.1226 + (Number(worker.id || 1) * 0.002),
+    lng: 83.1956 + (Number(worker.id || 1) * 0.002),
+    ...worker,
+    status: worker.status === "Available" ? "Online" : worker.status === "Busy" ? "Busy" : (worker.status || "Offline")
+  }));
   db.workerApplications = Array.isArray(db.workerApplications) ? db.workerApplications : [];
   db.bookings = Array.isArray(db.bookings) ? db.bookings : [];
   db.reviews = Array.isArray(db.reviews) ? db.reviews : [];
@@ -138,55 +135,58 @@ function phone10(value) {
   return String(value || "").replace(/[^\d]/g, "").slice(-10);
 }
 
-// --- Aadhaar number validation (Verhoeff checksum algorithm) ---
-// This is the same check-digit algorithm UIDAI uses to generate real Aadhaar
-// numbers, so it reliably rejects randomly typed / fake 12-digit numbers.
-// NOTE: this only proves the number is a mathematically valid Aadhaar number.
-// It does NOT confirm identity/ownership - real identity confirmation needs
-// UIDAI e-KYC (OTP) via a licensed AUA/KUA provider.
-const VERHOEFF_D = [
-  [0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],
-  [3,4,0,1,2,8,9,5,6,7],[4,0,1,2,3,9,5,6,7,8],[5,9,8,7,6,0,4,3,2,1],
-  [6,5,9,8,7,1,0,4,3,2],[7,6,5,9,8,2,1,0,4,3],[8,7,6,5,9,3,2,1,0,4],
-  [9,8,7,6,5,4,3,2,1,0]
-];
-const VERHOEFF_P = [
-  [0,1,2,3,4,5,6,7,8,9],[1,5,7,6,2,8,3,0,9,4],[5,8,0,3,7,9,6,1,4,2],
-  [8,9,1,6,0,4,3,5,2,7],[9,4,5,3,1,2,6,8,7,0],[4,2,8,6,5,7,3,9,0,1],
-  [2,7,9,3,8,0,6,4,1,5],[7,0,4,6,9,1,3,2,5,8]
-];
-
-function verhoeffIsValid(numStr) {
-  let c = 0;
-  const digits = numStr.split("").reverse().map(Number);
-  for (let i = 0; i < digits.length; i++) {
-    c = VERHOEFF_D[c][VERHOEFF_P[i % 8][digits[i]]];
-  }
-  return c === 0;
-}
-
-function normalizeAadhaar(value) {
+function aadhaar12(value) {
   return String(value || "").replace(/[^\d]/g, "");
 }
 
-function isValidAadhaarFormat(value) {
-  const num = normalizeAadhaar(value);
-  // Real Aadhaar numbers are 12 digits and never start with 0 or 1.
-  if (!/^[2-9]\d{11}$/.test(num)) return false;
-  return verhoeffIsValid(num);
+function validateAadhaar(value) {
+  const aadhaar = aadhaar12(value);
+  if (aadhaar.length !== 12) throw new Error("Aadhaar number must be exactly 12 digits");
+  if (/^(\d)\1{11}$/.test(aadhaar)) throw new Error("Aadhaar number is not valid");
+  return aadhaar;
 }
 
-function maskAadhaar(value) {
-  const num = normalizeAadhaar(value);
-  if (num.length !== 12) return "";
-  return `XXXX-XXXX-${num.slice(-4)}`;
+function otpKey(scope, phone) {
+  return `${scope}:${phone}`;
 }
 
-// One-way hash used only to detect the same Aadhaar being reused across
-// different phone numbers/accounts. The plain 12-digit number is never
-// stored on disk - only this hash and the masked display value are.
-function aadhaarHash(value) {
-  return crypto.createHash("sha256").update(normalizeAadhaar(value)).digest("hex");
+function pruneOtps() {
+  const now = Date.now();
+  for (const [key, value] of otpRequests) if (value.expiresAt <= now) otpRequests.delete(key);
+  for (const [key, value] of otpTokens) if (value.expiresAt <= now) otpTokens.delete(key);
+}
+
+function createOtp(scope, phone) {
+  pruneOtps();
+  if (!["customer", "worker"].includes(scope)) throw new Error("Invalid OTP scope");
+  if (phone.length !== 10) throw new Error("Valid 10 digit phone is required for OTP");
+  const code = String(crypto.randomInt(100000, 999999));
+  otpRequests.set(otpKey(scope, phone), { code, attempts: 0, expiresAt: Date.now() + OTP_TTL_MS });
+  return code;
+}
+
+function verifyOtp(scope, phone, otp) {
+  pruneOtps();
+  const key = otpKey(scope, phone);
+  const record = otpRequests.get(key);
+  if (!record) throw new Error("OTP expired. Please request a new OTP.");
+  record.attempts += 1;
+  if (record.attempts > 5) {
+    otpRequests.delete(key);
+    throw new Error("Too many wrong OTP attempts. Please request a new OTP.");
+  }
+  if (String(otp || "").replace(/[^\d]/g, "") !== record.code) throw new Error("Wrong OTP. Please check and try again.");
+  otpRequests.delete(key);
+  const token = crypto.randomBytes(24).toString("hex");
+  otpTokens.set(token, { scope, phone, expiresAt: Date.now() + OTP_TTL_MS });
+  return token;
+}
+
+function requireOtpToken(scope, phone, token) {
+  pruneOtps();
+  const record = otpTokens.get(String(token || ""));
+  if (!record || record.scope !== scope || record.phone !== phone) throw new Error("OTP verification required before login");
+  otpTokens.delete(String(token));
 }
 
 function cleanText(value, fallback = "", limit = 120) {
@@ -239,8 +239,7 @@ function sanitizeWorkerInput(input = {}, status = "pending") {
     verificationStatus: status,
     photoUrl: cleanText(input.photoUrl, "", 240),
     idUrl: cleanText(input.idUrl, "", 240),
-    aadhaar: cleanText(input.aadhaar, "", 20),
-    aadhaarHash: cleanText(input.aadhaarHash, "", 80),
+    aadhaar: input.aadhaar ? validateAadhaar(input.aadhaar) : "",
     lat: Number(input.lat || (23.1226 + Math.random() / 30)),
     lng: Number(input.lng || (83.1956 + Math.random() / 30))
   };
@@ -248,14 +247,9 @@ function sanitizeWorkerInput(input = {}, status = "pending") {
 
 function makeWorkerApplication(input = {}) {
   if (!input.photo?.dataUrl || !input.idProof?.dataUrl) throw new Error("Worker photo and ID proof are required");
-  if (!isValidAadhaarFormat(input.aadhaar)) {
-    throw new Error("Invalid Aadhaar number. Please enter a correct 12 digit Aadhaar number.");
-  }
   return {
     ...sanitizeWorkerInput(input, "pending"),
     status: "Pending",
-    aadhaar: maskAadhaar(input.aadhaar),
-    aadhaarHash: aadhaarHash(input.aadhaar),
     photoUrl: saveUpload(input.photo, "worker-photo"),
     idUrl: saveUpload(input.idProof, "worker-id"),
     steps: {
@@ -404,11 +398,7 @@ async function createRazorpayOrder(amount, receipt) {
 
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  // The admin panel is intentionally NOT served from this website anymore.
-  // It now runs as its own separate mini-server (see the /admin-panel
-  // folder) so it can be hosted on a different machine/port/domain than
-  // the public customer + worker site.
-  const routePath = url.pathname === "/" ? "/index.html" : url.pathname;
+  const routePath = url.pathname === "/" ? "/index.html" : url.pathname === "/admin" ? "/admin.html" : url.pathname;
   const pathname = decodeURIComponent(routePath);
   const filePath = path.normalize(path.join(publicDir, pathname));
   if (!filePath.startsWith(publicDir)) return sendError(res, 403, "Forbidden");
@@ -452,8 +442,40 @@ async function handleApi(req, res) {
     });
   }
 
+  if (req.method === "POST" && url.pathname === "/api/otp/request") {
+    const body = await parseBody(req);
+    const scope = cleanText(body.scope, "", 20);
+    const phone = phone10(body.phone);
+    try {
+      const otp = createOtp(scope, phone);
+      console.log(`FixIt OTP for ${scope} ${phone}: ${otp}`);
+      return sendJson(res, 200, {
+        ok: true,
+        message: "OTP sent. Demo OTP is shown for local testing.",
+        demoOtp: otp,
+        expiresInSeconds: OTP_TTL_MS / 1000
+      });
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/otp/verify") {
+    const body = await parseBody(req);
+    const scope = cleanText(body.scope, "", 20);
+    const phone = phone10(body.phone);
+    try {
+      const otpToken = verifyOtp(scope, phone, body.otp);
+      return sendJson(res, 200, { ok: true, otpToken });
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   if (req.method === "POST" && url.pathname === "/api/customer/login") {
-    const customer = sanitizeCustomer(await parseBody(req));
+    const body = await parseBody(req);
+    const customer = sanitizeCustomer(body);
+    requireOtpToken("customer", customer.phone, body.otpToken);
     const index = db.customers.findIndex(c => c.phone === customer.phone);
     if (index >= 0) db.customers[index] = { ...db.customers[index], ...customer };
     else db.customers.push(customer);
@@ -472,26 +494,16 @@ async function handleApi(req, res) {
     const phone = phone10(body.phone);
     if (db.workerApplications.some(a => a.phone === phone && a.verificationStatus === "pending")) return sendError(res, 409, "Pending application already exists");
     if (db.workers.some(w => w.phone === phone && w.verificationStatus === "verified")) return sendError(res, 409, "Worker already verified. Login with phone.");
-    if (!isValidAadhaarFormat(body.aadhaar)) return sendError(res, 400, "Invalid Aadhaar number. Please enter a correct 12 digit Aadhaar number.");
-    const incomingHash = aadhaarHash(body.aadhaar);
-    const aadhaarInUse = db.workers.some(w => w.aadhaarHash === incomingHash && w.phone !== phone)
-      || db.workerApplications.some(a => a.aadhaarHash === incomingHash && a.phone !== phone && a.verificationStatus !== "rejected");
-    if (aadhaarInUse) return sendError(res, 409, "This Aadhaar number is already registered with a different account.");
     const application = makeWorkerApplication(body);
-    // ID proof (Aadhaar) uploaded successfully -> auto-verify, no admin action needed.
-    application.verificationStatus = "verified";
-    application.status = "Verified";
-    application.reviewedAt = new Date().toISOString();
     db.workerApplications.push(application);
-    const worker = sanitizeWorkerInput({ ...application, id: Date.now(), status: "Online" }, "verified");
-    db.workers.push(worker);
     writeDb(db);
-    return sendJson(res, 201, { application, worker });
+    return sendJson(res, 201, { application });
   }
 
   if (req.method === "POST" && url.pathname === "/api/worker/login") {
     const body = await parseBody(req);
     const phone = phone10(body.phone);
+    requireOtpToken("worker", phone, body.otpToken);
     const worker = db.workers.find(w => w.phone === phone);
     const application = db.workerApplications.find(a => a.phone === phone);
     if (!worker && !application) return sendError(res, 404, "No worker account or application found");
@@ -696,28 +708,8 @@ async function handleApi(req, res) {
   sendError(res, 404, "API route not found");
 }
 
-// The admin panel now runs as a separate mini-server (see /admin-panel),
-// possibly on a different domain/port. These CORS headers let that
-// separate admin panel call this site's /api/admin/* endpoints from the
-// browser. Every admin endpoint still requires the FIXIT_API_KEY via the
-// x-api-key header (see requireAdmin), so opening this up cross-origin
-// does not expose private data to random websites.
-function applyAdminCors(req, res) {
-  if (!req.url.startsWith("/api/admin/")) return false;
-  res.setHeader("Access-Control-Allow-Origin", process.env.FIXIT_ADMIN_ORIGIN || "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return true;
-  }
-  return false;
-}
-
 const server = http.createServer(async (req, res) => {
   try {
-    if (applyAdminCors(req, res)) return;
     if (req.url.startsWith("/api/")) await handleApi(req, res);
     else serveStatic(req, res);
   } catch (error) {
