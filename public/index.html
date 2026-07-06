@@ -388,7 +388,13 @@ let workerMapObj=null,workerMapMarker=null;
 let customerOtpToken="",workerOtpToken="";
 
 async function api(p,o={}){
-  let r=await fetch(p,o),d=await r.json().catch(()=>({}));
+  let r;
+  try { r=await fetch(p,o); }
+  catch {
+    const msg=location.protocol==="file:"?"Website ko file se nahi, Start FixIt Website se http://localhost:3000 par open kijiye.":"Server se connection nahi ho raha. Pehle FixIt server start kijiye.";
+    showError(msg);throw Error(msg);
+  }
+  let d=await r.json().catch(()=>({}));
   if(!r.ok){showError(d.error||"API failed");throw Error(d.error||"API failed")}
   return d;
 }
@@ -466,8 +472,8 @@ function toggleCustMenu(){qs("custMenu").classList.toggle("open")}
 
 async function requestCustomerOtp(fromProfile=false){
   let phone=requirePhone((fromProfile?qs("cProfilePhone").value:qs("cPhone").value)||qs("cPhone").value);
-  let d=await api("/api/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({scope:"customer",phone})});
-  toast("Customer OTP: "+d.demoOtp);
+  await api("/api/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({scope:"customer",phone})});
+  toast("OTP SMS par bheja gaya");
 }
 async function verifyCustomerOtp(fromProfile=false){
   let phone=requirePhone((fromProfile?qs("cProfilePhone").value:qs("cPhone").value)||qs("cPhone").value);
@@ -593,8 +599,8 @@ async function workerRegister(){
 }
 async function requestWorkerOtp(){
   let phone=requirePhone(qs("wLoginPhone").value);
-  let d=await api("/api/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({scope:"worker",phone})});
-  toast("Worker OTP: "+d.demoOtp);
+  await api("/api/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({scope:"worker",phone})});
+  toast("OTP SMS par bheja gaya");
 }
 async function verifyWorkerOtp(){
   let phone=requirePhone(qs("wLoginPhone").value);
