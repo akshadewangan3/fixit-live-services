@@ -1,12 +1,44 @@
 # FixIt Live Services
 
-This is a publishable FixIt marketplace website with a Node.js backend API, customer login, worker login, worker verification, incoming booking workflow, separate admin page, UPI booking, Razorpay Checkout support, WhatsApp review links, and AI-style help chat.
+This is a publishable FixIt marketplace website with a Node.js backend API, OTP-verified customer and worker sign-in, worker verification, incoming booking workflow, a separate admin page, UPI booking, Razorpay Checkout support, WhatsApp review links, and AI-style help chat.
+
+## What changed in this security/design update
+
+Sign-in for customers and workers used to be "type any phone number" with no proof of ownership, which meant anyone could view or act on someone else's account just by knowing (or guessing) their number. That's fixed now:
+
+- **OTP sign-in.** Customers and workers verify their phone with a one-time 6-digit code before they can book, register, or manage anything. See "SMS / OTP setup" below.
+- **Session tokens.** After verifying, the app gets a bearer token (like a login session) that's required on every sensitive request. The server derives *who you are* from that token — it no longer trusts a phone number typed into a form field.
+- **No more spoofing another phone number.** Booking, reviewing, worker registration, worker profile updates, and accepting/completing jobs are all tied to your verified session, not to whatever phone number happens to be in the request body.
+- **Rate limiting** on OTP requests/verifications, admin login, and overall traffic per IP.
+- **No hardcoded admin secret.** If you don't set `FIXIT_API_KEY`, the server generates a random one at startup and prints it to the console (it changes on every restart, so set it in `.env` for anything real).
+- **File upload validation** now checks the actual file bytes (magic numbers), not just the label the browser sent, so a renamed/mislabeled file can't sneak past the PNG/JPG/WEBP/PDF check.
+- **Security headers** (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS) on every response.
+- **Warm, modern visual refresh** — new color palette, softer rounded cards, and a friendlier feel across the customer, worker, and admin screens.
+
+## SMS / OTP setup
+
+By default, with no SMS provider configured, OTP codes are printed to the **server console** and (only outside `NODE_ENV=production`) included in the API response as `devOtp` so you can test locally without paying for SMS. In production with no provider configured, codes are *not* exposed in the response — they only appear in the server log, so set up a provider before you launch:
+
+**Option A — MSG91** (popular for Indian numbers):
+```text
+MSG91_AUTH_KEY=your-msg91-authkey
+MSG91_TEMPLATE_ID=your-template-id   # optional, if your MSG91 OTP flow needs one
+```
+
+**Option B — Twilio**:
+```text
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_FROM_NUMBER=+1xxxxxxxxxx
+```
+
+Set one of these (not both) in your `.env` file. No extra npm packages are needed — both are called directly over HTTPS.
 
 ## Main flows
 
-- Customers can search verified workers and book home services.
+- Customers verify their phone with an OTP, then search verified workers and book home services.
 - Customers get a panel with Home, Profile, Address, App Settings, and Help & Support.
-- Workers can register themselves with photo and ID proof, then login after verification.
+- Workers verify their phone with an OTP, then register with photo and ID proof, and log back in the same way after verification.
 - Workers get verification steps, personal details, dashboard stats, and incoming bookings.
 - Admin can verify or reject worker applications from `public/admin.html` or `/admin`.
 - Only verified workers become visible to customers, and customer search shows anonymous service/price options instead of worker identity.
@@ -27,6 +59,9 @@ Open:
 http://localhost:3000
 ```
 
+If you haven't set `FIXIT_API_KEY`, check the console output for the generated admin key.
+If you haven't set an SMS provider, check the console output for OTP codes when you sign in.
+
 ## Private admin API
 
 Set a secret key before publishing:
@@ -36,12 +71,7 @@ $env:FIXIT_API_KEY="your-strong-secret"
 npm start
 ```
 
-**The admin panel is no longer part of this website.** It has moved to its
-own standalone mini-app in the `admin-panel` folder, which you run
-separately (a different PC, port, or host) - see `admin-panel/README.md`.
-It calls this site's private `/api/admin/*` endpoints using the same
-`FIXIT_API_KEY` you set here. This site only exposes those admin endpoints
-over the network; it does not serve any admin HTML page itself anymore.
+Use the same key in the app's Admin screen to view private bookings, add workers, or delete workers.
 
 Admin also uses this key to verify worker applications.
 
@@ -81,11 +111,14 @@ Required start command:
 npm start
 ```
 
-Required environment variable:
+Required environment variables:
 
 ```text
 FIXIT_API_KEY=your-strong-secret
+NODE_ENV=production
 ```
+
+Plus one SMS provider (see "SMS / OTP setup" above) — without one, OTPs only reach the server console, not real phones.
 
 Optional environment variables:
 
@@ -104,3 +137,4 @@ Uploaded worker photos and ID files are stored in `public/uploads`. In productio
 ## Important production note
 
 The WhatsApp review message is opened as a WhatsApp link after the worker marks the job complete. To send WhatsApp messages automatically without a click, you need the official WhatsApp Business API and an approved message template.
+
