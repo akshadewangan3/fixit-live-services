@@ -140,3 +140,13 @@ Uploaded worker photos and ID files are stored in `public/uploads`. In productio
 ## Important production note
 
 The WhatsApp review message is opened as a WhatsApp link after the worker marks the job complete. To send WhatsApp messages automatically without a click, you need the official WhatsApp Business API and an approved message template.
+
+# FixIt Website
+
+FixIt is a Node.js home-services marketplace with OTP login for customers and workers, worker verification, bookings, admin dashboard, Razorpay support, and live tracking.
+
+## Run Locally
+
+```bash
+npm install
+npm start
