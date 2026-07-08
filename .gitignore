@@ -1,4 +1,5 @@
 .env
+data/db.json
+public/uploads/*
+!public/uploads/.gitkeep
 node_modules/
-npm-debug.log*
-
