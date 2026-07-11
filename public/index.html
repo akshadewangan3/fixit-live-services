@@ -248,7 +248,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
     <button id="tabLanding" class="active" onclick="show('landing')">Dispatch</button>
     <button id="tabCustomer" onclick="show('customer')">Customer</button>
     <button id="tabWorker" onclick="show('worker')">Worker</button>
-    <button onclick="location.href='admin.html'">Admin</button>
   </nav>
   <div class="sync"><span id="syncDot" class="dot"></span><span id="sync">Connecting</span></div>
 </div></header>
@@ -312,7 +311,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 
   <section class="panel reveal"><div class="head"><div><h2 class="title">Who's on the board right now</h2><div class="sub">A quick look before you continue. Book from the Customer side.</div></div></div><div id="workersPreview" class="grid3"></div></section>
 
-  <div class="staffLink"><a href="admin.html">Staff / admin login &rarr;</a></div>
 </div></main>
 
 <!-- ============ CUSTOMER ============ -->
@@ -432,28 +430,6 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
       </div>
     </div>
   </section>
-</div></main>
-
-<!-- ============ ADMIN ============ -->
-<main id="admin" class="screen"><div class="wrap">
-  <section class="panel" id="adminLogin">
-    <div class="head"><div><h2 class="title">Admin desk</h2><div class="sub">Enter the admin API key to open the console.</div></div></div>
-    <div class="field"><label>Admin API key</label><input id="adminKey" type="password"></div>
-    <button class="btn dark" onclick="adminLogin()">Open console</button>
-  </section>
-  <div id="adminDash" style="display:none">
-    <section class="panel"><div class="statusLine">
-      <div class="stat"><strong id="aCustomers">0</strong><span>Customers</span></div>
-      <div class="stat"><strong id="aWorkers">0</strong><span>Workers</span></div>
-      <div class="stat"><strong id="aPending">0</strong><span>Pending verification</span></div>
-      <div class="stat"><strong id="aBookings">0</strong><span>Bookings</span></div>
-    </div></section>
-    <section class="panel"><div class="head"><div><h2 class="title">Live worker map</h2><div class="sub">Every worker's current position. Green = online, amber = busy, grey = offline.</div></div></div>
-      <div id="adminMap" class="mapBox"></div>
-    </section>
-    <section class="panel"><div class="head"><div><h2 class="title">Worker applications</h2></div></div><div id="adminApps" class="list"></div></section>
-    <section class="panel"><div class="head"><div><h2 class="title">Bookings</h2></div></div><div id="adminBookings" class="list"></div></section>
-  </div>
 </div></main>
 
 <!-- ============ MODALS ============ -->
@@ -585,14 +561,13 @@ let currentCustomer=JSON.parse(localStorage.fixitCustomer||"{}");
 let customerToken=localStorage.fixitCustomerToken||"";
 let workerPhone=localStorage.fixitWorkerPhone||"";
 let workerToken=localStorage.fixitWorkerToken||"";
-let adminKey=localStorage.fixitAdminKey||"";
 let customerBookings=[],reviewBookingId=new URLSearchParams(location.search).get("review");
 let customerGeo=JSON.parse(localStorage.fixitCustomerGeo||"null");
 let bookingGeo=null,shareWatchId=null,trackTimer=null,trackMapObj=null,trackMarkers={};
-let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
+let workerMapObj=null,workerMapMarker=null;
 
 async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"API failed");return d}
-function headers(admin=false){let h={"Content-Type":"application/json"};if(admin)h["x-api-key"]=adminKey;return h}
+function headers(){return {"Content-Type":"application/json"}}
 function custHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+customerToken}}
 function workHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+workerToken}}
 function toast(m){qs("toast").textContent=m;qs("toast").classList.add("show");setTimeout(()=>qs("toast").classList.remove("show"),2800)}
@@ -600,10 +575,9 @@ function toast(m){qs("toast").textContent=m;qs("toast").classList.add("show");se
 function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   qs(id).classList.add("active");
-  ["Landing","Customer","Worker","Admin"].forEach(n=>{let t=qs("tab"+n);if(t)t.classList.toggle("active",n.toLowerCase()==id)});
+  ["Landing","Customer","Worker"].forEach(n=>{let t=qs("tab"+n);if(t)t.classList.toggle("active",n.toLowerCase()==id)});
   if(id=="customer"){renderCustomerAuthState();loadCustomer();}
   if(id=="worker"){renderWorkerAuthState();if(workerToken)workerDashboard();}
-  if(id=="admin"&&adminKey)loadAdmin();
 }
 
 async function boot(){
@@ -637,7 +611,7 @@ function renderWorkers(){
   qs("workers").innerHTML=list.length?list.map(w=>{
     let fee=Math.round(w.charge*(settings.commissionRate||.1)),total=w.charge+fee;
     let dist=w.distanceKm==null?"Set location":`${w.distanceKm} km away`;
-    return `<article class="card worker"><div class="row"><div><div class="name">${esc(w.service)}</div><div class="meta">${esc(w.area)} area</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag blue">${esc(dist)}</span><span class="tag">Within ${maxKm} km radar</span></div><div class="exp">Book this profession. FixIt assigns a verified nearby worker privately, like a ride booking.</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book worker</button></div></article>`;
+    return `<article class="card worker"><div class="row"><div><div class="name">${esc(w.service)}</div><div class="meta">${esc(w.area)} area</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag blue">${esc(dist)}</span><span class="tag">Within ${maxKm} km radar</span></div><div class="exp">Book this profession. Episkevi assigns a verified nearby worker privately, like a ride booking.</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book worker</button></div></article>`;
   }).join(""):'<div class="empty" style="grid-column:1/-1">No worker found.</div>';
 }
 
@@ -743,7 +717,7 @@ async function book(method){
 async function payRazorpay(){
   let total=currentWorker.charge+Math.round(currentWorker.charge*(settings.commissionRate||.1));
   let o=await api("/api/create-order",{method:"POST",headers:custHeaders(),body:JSON.stringify({amount:total*100,receipt:"fixit_"+Date.now()})});
-  new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:settings.merchantName||"FixIt",description:currentWorker.service+" booking",
+  new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:settings.merchantName||"Episkevi",description:currentWorker.service+" booking",
     handler:async r=>{await api("/api/verify-payment",{method:"POST",headers:custHeaders(),body:JSON.stringify(r)});await book("razorpay")},
     modal:{ondismiss:()=>toast("Payment cancelled")}}).open();
 }
@@ -909,48 +883,6 @@ async function sendHelp(){
   let d=await api("/api/help/chat",{method:"POST",headers:custHeaders(),body:JSON.stringify({message:msg})});
   qs("chatBox").innerHTML+=`<div class="chatMsg">${esc(d.reply)}</div>`;
   qs("chatInput").value="";qs("chatBox").scrollTop=qs("chatBox").scrollHeight;
-}
-
-/* ---- admin ---- */
-async function adminLogin(){
-  adminKey=qs("adminKey").value;localStorage.fixitAdminKey=adminKey;
-  await api("/api/admin/login",{method:"POST",headers:headers(true),body:"{}"});
-  loadAdmin();
-}
-async function loadAdmin(){
-  let d=await api("/api/admin/dashboard",{headers:headers(true)});
-  qs("adminLogin").style.display="none";qs("adminDash").style.display="block";
-  qs("aCustomers").textContent=d.customers.length;qs("aWorkers").textContent=d.workers.length;
-  qs("aPending").textContent=d.workerApplications.filter(a=>a.verificationStatus=="pending").length;
-  qs("aBookings").textContent=d.bookings.length;
-  qs("adminApps").innerHTML=d.workerApplications.length?d.workerApplications.map(a=>`<div class="card row"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.service)} · ${esc(a.phone)} · ${esc(a.verificationStatus)}</div><a href="${esc(a.idUrl)}" target="_blank">View ID</a></div>${a.verificationStatus=="pending"?`<div><button class="btn primary" onclick="reviewApp(${a.id},'verify')">Verify</button> <button class="btn danger" onclick="reviewApp(${a.id},'reject')">Reject</button></div>`:""}</div>`).join(""):'<div class="empty">No applications</div>';
-  qs("adminBookings").innerHTML=bookingCards(d.bookings);
-  drawAdminMap(d.workers);
-}
-async function reviewApp(id,action){
-  await api(`/api/admin/worker-applications/${id}/${action}`,{method:"POST",headers:headers(true),body:JSON.stringify({reason:"Documents not clear"})});
-  toast("Application updated");loadAdmin();boot();
-}
-function drawAdminMap(list){
-  if(!adminMapObj){
-    adminMapObj=L.map("adminMap").setView([AMBI.lat,AMBI.lng],12);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(adminMapObj);
-  }
-  setTimeout(()=>adminMapObj.invalidateSize(),80);
-  let seen=new Set();
-  list.forEach(w=>{
-    if(w.lat==null||w.lng==null)return;
-    seen.add(w.id);
-    let cls=w.status=="Online"?"green":w.status=="Busy"?"amber":"grey";
-    let color=w.status=="Online"?"#0f7a6c":w.status=="Busy"?"#f2a71b":"#9aa4ad";
-    let html=`<div style="background:${color};color:#fff;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800">${esc((w.name||"?").slice(0,1))}</div>`;
-    let icon=L.divIcon({className:"",html,iconSize:[28,28],iconAnchor:[14,14]});
-    if(adminMapMarkers[w.id]){adminMapMarkers[w.id].setLatLng([w.lat,w.lng]).setIcon(icon)}
-    else{
-      adminMapMarkers[w.id]=L.marker([w.lat,w.lng],{icon}).addTo(adminMapObj).bindPopup(`<b>${esc(w.name)}</b><br>${esc(w.service)} · ${esc(w.status)}`);
-    }
-  });
-  Object.keys(adminMapMarkers).forEach(id=>{if(!seen.has(Number(id))){adminMapObj.removeLayer(adminMapMarkers[id]);delete adminMapMarkers[id]}});
 }
 
 /* ---- reviews ---- */
