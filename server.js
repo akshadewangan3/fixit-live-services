@@ -258,7 +258,7 @@ function sendViaTwilio(phone, otp) {
   const body = new URLSearchParams({
     To: `+91${phone}`,
     From: TWILIO_FROM_NUMBER,
-    Body: `Your FixIt verification code is ${otp}. It expires in 5 minutes. Do not share this code.`
+    Body: `Your Episkevi verification code is ${otp}. It expires in 5 minutes. Do not share this code.`
   }).toString();
   return httpsFormRequest({
     hostname: "api.twilio.com",
@@ -513,7 +513,7 @@ function reviewUrl(req, bookingId) {
 
 function whatsappReviewLink(req, booking) {
   const text = [
-    `Hi ${booking.customerName}, your FixIt ${booking.service} service is marked completed.`,
+    `Hi ${booking.customerName}, your Episkevi ${booking.service} service is marked completed.`,
     `Please review ${booking.workerName}: ${reviewUrl(req, booking.id)}`,
     "Options: Good behaviour, Excellent service, 1 to 5 star rating."
   ].join("\n");
@@ -607,7 +607,7 @@ async function handleApi(req, res) {
   const db = readDb();
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    return sendJson(res, 200, { ok: true, app: "FixIt Marketplace" });
+    return sendJson(res, 200, { ok: true, app: "Episkevi Marketplace" });
   }
 
   if (req.method === "GET" && url.pathname === "/api/bootstrap") {
@@ -618,7 +618,7 @@ async function handleApi(req, res) {
         commissionRate: COMMISSION_RATE,
         maxServiceRadiusKm: MAX_SERVICE_RADIUS_KM,
         upiId: process.env.FIXIT_UPI_ID || "test@razorpay",
-        merchantName: process.env.FIXIT_MERCHANT_NAME || "FixIt",
+        merchantName: process.env.FIXIT_MERCHANT_NAME || "Episkevi",
         razorpayKeyId: RAZORPAY_KEY_ID,
         razorpayEnabled: Boolean(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET)
       }
@@ -843,7 +843,7 @@ async function handleApi(req, res) {
       ? "Refund ya payment issue ke liye booking ID bhejiye. Admin panel me payment status check karke support karega."
       : message.toLowerCase().includes("worker")
         ? "Worker late hai to booking status open kijiye. Worker location aur call option customer booking card par dikh raha hai."
-        : "FixIt support: booking, worker verification, payment, address, ya review ke liye apna phone aur booking detail bhejiye.";
+        : "Episkevi support: booking, worker verification, payment, address, ya review ke liye apna phone aur booking detail bhejiye.";
     const ticket = { id: Date.now(), phone: session.phone, message, reply, createdAt: new Date().toISOString() };
     db.helpTickets.push(ticket);
     writeDb(db);
@@ -927,7 +927,7 @@ const server = http.createServer(async (req, res) => {
 
 ensureDb();
 server.listen(PORT, () => {
-  console.log(`FixIt Marketplace is running at http://localhost:${PORT}`);
+  console.log(`Episkevi Marketplace is running at http://localhost:${PORT}`);
   if (adminKeyWasGenerated) {
     console.log("\n============================================================");
     console.log(" No FIXIT_API_KEY was set in .env — a random admin key was");
