@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FixIt — Live Home Services</title>
+<title>Episkevi — Premium Home Services</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -235,7 +235,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 <body>
 <div id="splash">
   <div class="sMark"><svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a1.5 1.5 0 0 0 2.1 2.1l6-6a4 4 0 0 0 5.4-5.4l-2.1 2.1-2-2 2.1-2.1z"/></svg></div>
-  <h1>FixIt</h1>
+  <h1>Episkevi</h1>
   <p>Verified home services, on demand</p>
   <div class="sBar"><i></i></div>
   <div class="sSkip" onclick="dismissSplash()">Tap to continue</div>
@@ -243,7 +243,7 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 <div class="bg-fx"><span></span><span></span><span></span></div>
 <div id="toast" class="toast"></div>
 <header class="top"><div class="topin">
-  <div class="brand" onclick="show('landing')"><span class="mark">FI</span>FixIt</div>
+  <div class="brand" onclick="show('landing')"><span class="mark">EP</span>Episkevi</div>
   <nav class="tabs">
     <button id="tabLanding" class="active" onclick="show('landing')">Dispatch</button>
     <button id="tabCustomer" onclick="show('customer')">Customer</button>
@@ -258,8 +258,8 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
   <section class="dispatchHero reveal">
     <div class="heroRow">
       <div class="heroText">
-        <div class="eyebrow">FixIt · Ambikapur</div>
-        <h1>Are you booking a repair, or here to work?</h1>
+        <div class="eyebrow">Episkevi · Ambikapur</div>
+        <h1>Professional Home Services At Your Doorstep</h1>
         <p class="lead">Pick your side to continue. Homeowners verify their phone and book a trusted, verified pro. Workers verify their phone, get approved, and start taking jobs.</p>
         <div class="liveStrip">
           <div><strong id="mWorkers">0</strong><span>Workers on the board</span></div>
@@ -280,7 +280,17 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
         </svg>
       </div>
     </div>
-  </section>
+  
+<section style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+<div class="card">⚡ Electrician</div>
+<div class="card">🚿 Plumber</div>
+<div class="card">❄️ AC Repair</div>
+<div class="card">🧹 Cleaning</div>
+<div class="card">🪚 Carpenter</div>
+<div class="card">🎨 Painter</div>
+</section>
+<style>.card{background:#161620;padding:16px;border-radius:16px;border:1px solid rgba(201,168,76,.15);text-align:center;font-weight:700}</style>
+</section>
 
   <div class="ticketRow roleRow reveal">
     <article class="ticket cust" onclick="show('customer')">
