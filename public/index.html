@@ -507,14 +507,28 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 function dismissSplash(){
   const s=qs("splash");if(!s||s.classList.contains("hide"))return;
   s.classList.add("hide");
-  try{sessionStorage.setItem("fixitSplashSeen","1")}catch(e){}
   setTimeout(()=>s.remove(),700);
 }
 (function(){
   let seen=false;try{seen=sessionStorage.getItem("fixitSplashSeen")==="1"}catch(e){}
   if(seen){let s=qs("splash");if(s)s.remove();}
-  else{setTimeout(dismissSplash,2600);}
+  else{
+    // mark as seen immediately so navigating away (e.g. to admin.html) and back
+    // never re-triggers the intro, even if the 2.6s timer never got to finish
+    try{sessionStorage.setItem("fixitSplashSeen","1")}catch(e){}
+    setTimeout(dismissSplash,2600);
+  }
 })();
+/* Safety net: if the page is restored from the browser's back/forward cache
+   (e.g. tapping Back after visiting admin.html) mid-animation, the splash div
+   can get stuck on screen blocking the whole app. Force it gone on restore. */
+window.addEventListener("pageshow",function(ev){
+  const s=qs("splash");
+  if(s && (ev.persisted || (performance.getEntriesByType("navigation")[0]||{}).type==="back_forward")){
+    s.classList.add("hide");
+    s.remove();
+  }
+});
 
 /* ---- scroll reveal ---- */
 (function(){
