@@ -308,10 +308,15 @@ function sendEmailSmtp(to, subject, text) {
 
     socket.on("data", chunk => {
       buf += chunk.toString();
-      if (!buf.endsWith("\r\n")) return; // wait for the full response block
-      const lines = buf.trim().split("\r\n");
-      const codeLine = lines[lines.length - 1];
-      const code = parseInt(codeLine.slice(0, 3), 10);
+      if (!buf.endsWith("\r\n")) return; // wait for the rest of this line
+      const allLines = buf.split("\r\n").filter(Boolean);
+      const lastLine = allLines[allLines.length - 1] || "";
+      // SMTP multi-line responses use "250-text" for continuation lines and
+      // "250 text" (space, not dash) for the final line of the response.
+      // Keep buffering until we've actually seen the final line.
+      if (!/^\d{3} /.test(lastLine)) return;
+      const codeLine = lastLine;
+      const code = parseInt(codeLine.slice(0, 3), 10) || 0;
       buf = "";
       try {
         switch (step) {
@@ -359,7 +364,7 @@ async function sendOtpCode(phone, otp, email) {
     if (MSG91_AUTH_KEY) { await sendViaMsg91(phone, otp); return { sent: true, channel: "sms" }; }
     if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) { await sendViaTwilio(phone, otp); return { sent: true, channel: "sms" }; }
   } catch (error) {
-    console.error("OTP send failed:", error.message);
+    console.error("OTP send failed:", (error && error.message) ? error.message : String(error));
     return { sent: false, channel: null };
   }
   console.log(`[DEV OTP] No provider configured. Code for ${phone}${email ? " / " + email : ""}: ${otp} (set SMTP_* for email, or MSG91_AUTH_KEY / TWILIO_* for SMS, in .env)`);
