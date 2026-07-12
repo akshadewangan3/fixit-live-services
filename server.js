@@ -39,7 +39,12 @@ const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || "";
 
-// ---- Email OTP config (no approval needed - works immediately) ----
+// ---- Email OTP config ----
+// Brevo (HTTP API, works even on hosts that block outbound SMTP ports - recommended)
+const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "";
+const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || "Episkevi";
+// Raw SMTP fallback (needs outbound port 465 to be open on your host - many free hosts block this)
 const SMTP_HOST = process.env.SMTP_HOST || "";
 const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
 const SMTP_USER = process.env.SMTP_USER || "";
@@ -278,6 +283,39 @@ function sendViaTwilio(phone, otp) {
   }).then(() => true);
 }
 
+function sendEmailBrevo(to, subject, text) {
+  if (!BREVO_API_KEY || !BREVO_SENDER_EMAIL) return Promise.reject(new Error("Brevo not configured"));
+  const body = JSON.stringify({
+    sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+    to: [{ email: to }],
+    subject,
+    textContent: text
+  });
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      method: "POST",
+      hostname: "api.brevo.com",
+      path: "/v3/smtp/email",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Content-Length": Buffer.byteLength(body)
+      }
+    }, res => {
+      let raw = "";
+      res.on("data", chunk => raw += chunk);
+      res.on("end", () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) return reject(new Error(`Brevo responded ${res.statusCode}: ${raw.slice(0, 200)}`));
+        resolve(true);
+      });
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 function sendEmailSmtp(to, subject, text) {
   return new Promise((resolve, reject) => {
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !SMTP_FROM) return reject(new Error("SMTP not configured"));
@@ -354,20 +392,33 @@ function sendEmailSmtp(to, subject, text) {
   });
 }
 
+function describeError(error) {
+  if (!error) return "unknown error";
+  if (error.name === "AggregateError" && Array.isArray(error.errors) && error.errors.length) {
+    return error.errors.map(e => e.message || String(e)).join("; ");
+  }
+  return error.message || String(error);
+}
+
 async function sendOtpCode(phone, otp, email) {
+  const subject = "Your Episkevi verification code";
   const text = `Your Episkevi verification code is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`;
   try {
+    if (email && BREVO_API_KEY && BREVO_SENDER_EMAIL) {
+      await sendEmailBrevo(email, subject, text);
+      return { sent: true, channel: "email" };
+    }
     if (email && SMTP_HOST && SMTP_USER && SMTP_PASS) {
-      await sendEmailSmtp(email, "Your Episkevi verification code", text);
+      await sendEmailSmtp(email, subject, text);
       return { sent: true, channel: "email" };
     }
     if (MSG91_AUTH_KEY) { await sendViaMsg91(phone, otp); return { sent: true, channel: "sms" }; }
     if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) { await sendViaTwilio(phone, otp); return { sent: true, channel: "sms" }; }
   } catch (error) {
-    console.error("OTP send failed:", (error && error.message) ? error.message : String(error));
+    console.error("OTP send failed:", describeError(error));
     return { sent: false, channel: null };
   }
-  console.log(`[DEV OTP] No provider configured. Code for ${phone}${email ? " / " + email : ""}: ${otp} (set SMTP_* for email, or MSG91_AUTH_KEY / TWILIO_* for SMS, in .env)`);
+  console.log(`[DEV OTP] No provider configured. Code for ${phone}${email ? " / " + email : ""}: ${otp} (set BREVO_API_KEY for email, or MSG91_AUTH_KEY / TWILIO_* for SMS, in .env)`);
   return { sent: false, channel: null };
 }
 
@@ -1035,10 +1086,14 @@ server.listen(PORT, () => {
     console.log(" Set FIXIT_API_KEY in your .env file to keep a stable admin key.");
     console.log("============================================================\n");
   }
-  if (!(SMTP_HOST && SMTP_USER && SMTP_PASS) && !MSG91_AUTH_KEY && !(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER)) {
-    console.log("No OTP delivery provider configured (SMTP_* for email, or MSG91_AUTH_KEY / TWILIO_* for SMS).");
+  const hasEmail = (BREVO_API_KEY && BREVO_SENDER_EMAIL) || (SMTP_HOST && SMTP_USER && SMTP_PASS);
+  const hasSms = MSG91_AUTH_KEY || (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER);
+  if (!hasEmail && !hasSms) {
+    console.log("No OTP delivery provider configured (BREVO_API_KEY for email, or MSG91_AUTH_KEY / TWILIO_* for SMS).");
     console.log("OTP codes will be printed here in the console for local testing only.\n");
+  } else if (BREVO_API_KEY && BREVO_SENDER_EMAIL) {
+    console.log(`Email OTP delivery is configured via Brevo (sender: ${BREVO_SENDER_EMAIL}). Customers/workers who enter an email will get their code by email.\n`);
   } else if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-    console.log(`Email OTP delivery is configured (${SMTP_HOST}). Customers/workers who enter an email will get their code by email.\n`);
+    console.log(`Email OTP delivery is configured via raw SMTP (${SMTP_HOST}). Note: many free hosts block outbound SMTP ports - if sending fails, switch to BREVO_API_KEY instead.\n`);
   }
 });
