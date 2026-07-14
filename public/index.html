@@ -6,41 +6,40 @@
 <title>FixIt — Live Home Services</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
-  --ink:#F0EDE6; --muted:#8A8799; --line:rgba(201,168,76,.16); --paper:#111118; --wash:#0A0A0F;
-  --navy:#1A1A24; --navy2:#22222F; --amber:#C9A84C; --amber-ink:#0A0A0F;
-  --teal:#C9A84C; --teal2:#E8D49A; --teal-wash:rgba(201,168,76,.10); --red:#E74C3C; --red-wash:rgba(231,76,60,.12);
-  --green:#2ECC71; --green-wash:rgba(46,204,113,.12); --accent:#4E9FF5; --accent2:#7B5CF0; --warning:#F39C12;
-  --shadow:0 8px 40px rgba(0,0,0,.5); --shadow-gold:0 0 40px rgba(201,168,76,.15);
-  --display:"Playfair Display",serif; --mono:"DM Mono",monospace;
+  --ink:#17222B; --muted:#5C6B74; --line:rgba(23,34,43,.10); --paper:#FFFFFF; --wash:#F2F5F4;
+  --navy:#EEF2F1; --navy2:#E3E9E7;
+  --teal:#0E6E55; --teal2:#14997A; --teal-wash:rgba(14,110,85,.09); --red:#D64545; --red-wash:rgba(214,69,69,.10);
+  --green:#1FAE6B; --green-wash:rgba(31,174,107,.12); --accent:#2F7DE0; --accent2:#6C5CE0; --warning:#C97A12;
+  --shadow:0 10px 34px rgba(23,34,43,.09); --shadow-gold:0 10px 28px rgba(14,110,85,.16);
+  --display:"Sora",sans-serif; --mono:"IBM Plex Mono",monospace;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--wash);color:var(--ink);font-family:"DM Sans",sans-serif;overflow-x:hidden}
+body{margin:0;background:var(--wash);color:var(--ink);font-family:"Inter",sans-serif;overflow-x:hidden}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 .mono{font-family:var(--mono)}
 ::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:var(--paper)}
-::-webkit-scrollbar-thumb{background:var(--gold-dark,#8B6914);border-radius:4px}
+::-webkit-scrollbar-track{background:var(--wash)}
+::-webkit-scrollbar-thumb{background:var(--teal);border-radius:4px}
 
 /* ---- top bar ---- */
-.top{position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(10,10,15,.9);backdrop-filter:blur(20px)}
+.top{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--line);background:rgba(255,255,255,.88);backdrop-filter:blur(20px)}
 .topin{max-width:1280px;margin:auto;padding:13px 22px;display:flex;gap:16px;align-items:center;justify-content:space-between}
-.brand{display:flex;gap:10px;align-items:center;font-family:var(--display);font-size:26px;font-weight:900;cursor:pointer;letter-spacing:-1px}
-.brand{background:linear-gradient(135deg,var(--teal),var(--teal2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.mark{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#8B6914,var(--teal));color:#0A0A0F;font-family:var(--mono);font-weight:700;font-size:13px;box-shadow:0 4px 16px rgba(201,168,76,.35)}
-.tabs{display:flex;gap:4px;padding:5px;border:1px solid rgba(255,255,255,.06);border-radius:999px;background:var(--paper)}
-.tabs button{border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:600;min-height:36px;padding:0 16px;font-size:14px;transition:all .2s ease;font-family:"DM Sans",sans-serif}
-.tabs button.active{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#0A0A0F;font-weight:700}
+.brand{display:flex;gap:10px;align-items:center;font-family:var(--display);font-size:24px;font-weight:800;cursor:pointer;letter-spacing:-.7px;color:var(--ink)}
+.mark{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:var(--mono);font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(14,110,85,.35)}
+.tabs{display:flex;gap:4px;padding:5px;border:1px solid var(--line);border-radius:999px;background:var(--paper)}
+.tabs button{border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:600;min-height:36px;padding:0 16px;font-size:14px;transition:all .2s ease;font-family:"Inter",sans-serif}
+.tabs button.active{background:var(--teal);color:#fff;font-weight:700}
 .sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);font-weight:600}
-.dot{width:8px;height:8px;border-radius:50%;background:#4A4860}
+.dot{width:8px;height:8px;border-radius:50%;background:#C7D0CD}
 .dot.live{background:var(--green);box-shadow:0 0 0 4px var(--green-wash);animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
 .screen{display:none}
@@ -48,128 +47,133 @@ h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
 .wrap{max-width:1280px;margin:auto;padding:26px 22px 60px}
 
 /* ---- landing / role picker ---- */
-.dispatchHero{border-radius:22px;background:var(--paper);color:var(--ink);padding:clamp(30px,5vw,58px);position:relative;overflow:hidden;border:1px solid rgba(201,168,76,.15)}
-.dispatchHero::before{content:"";position:absolute;top:-200px;right:-100px;width:600px;height:600px;background:radial-gradient(circle,rgba(201,168,76,.10) 0%,transparent 70%);pointer-events:none}
+.dispatchHero{border-radius:22px;background:var(--paper);color:var(--ink);padding:clamp(30px,5vw,58px);position:relative;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+.dispatchHero::before{content:"";position:absolute;top:-200px;right:-100px;width:600px;height:600px;background:radial-gradient(circle,rgba(14,110,85,.07) 0%,transparent 70%);pointer-events:none}
 .dispatchHero>*{position:relative}
-.eyebrow{font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);background:rgba(201,168,76,.08);display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 26px;border-radius:999px;border:1px solid rgba(201,168,76,.18);position:relative}
+.eyebrow{font-family:"Inter",sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);background:var(--teal-wash);display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 26px;border-radius:999px;border:1px solid rgba(14,110,85,.18);position:relative}
 .eyebrow::before{content:"";position:absolute;left:12px;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-.dispatchHero h1{font-size:clamp(34px,5.2vw,58px);line-height:1.08;margin:18px 0 12px;font-weight:900;letter-spacing:-2px;
-  background:linear-gradient(135deg,var(--teal) 0%,var(--teal2) 50%,var(--teal) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;max-width:700px}
-.dispatchHero .lead{font-size:17px;line-height:1.7;color:var(--muted);max-width:520px;font-family:"DM Sans",sans-serif;font-weight:300}
-.liveStrip{display:flex;gap:32px;flex-wrap:wrap;margin-top:28px;padding-top:22px;border-top:1px solid rgba(255,255,255,.08)}
-.liveStrip div strong{display:block;font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)}
+.dispatchHero h1{font-size:clamp(32px,5vw,52px);line-height:1.1;margin:18px 0 12px;font-weight:800;letter-spacing:-1.5px;color:var(--ink);max-width:700px}
+.dispatchHero .lead{font-size:17px;line-height:1.7;color:var(--muted);max-width:520px;font-family:"Inter",sans-serif;font-weight:400}
+.liveStrip{display:flex;gap:32px;flex-wrap:wrap;margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+.liveStrip div strong{display:block;font-family:var(--display);font-size:26px;font-weight:700;color:var(--teal)}
 .liveStrip div span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
 
 .ticketRow{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:26px}
 .roleRow{grid-template-columns:repeat(2,1fr)}
 .roleRow .ticket{padding:34px 30px 32px;text-align:left}
-.roleRow .tIcon{font-size:40px;margin-bottom:14px;width:auto;height:auto;background:none;box-shadow:none;display:block}
+.roleRow .tIcon{font-size:38px;margin-bottom:14px;width:auto;height:auto;background:none;box-shadow:none;display:block}
 .staffLink{text-align:center;margin-top:26px}
-.staffLink a{color:var(--muted);font-weight:600;font-size:13px;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.15)}
+.staffLink a{color:var(--muted);font-weight:600;font-size:13px;text-decoration:none;border-bottom:1px dashed var(--line)}
 .staffLink a:hover{color:var(--teal)}
-.ticket{position:relative;background:var(--paper);border:1px solid rgba(201,168,76,.15);border-radius:22px;padding:26px 24px 30px;transition:all .3s ease;cursor:pointer;overflow:hidden}
+.ticket{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px 24px 30px;transition:all .25s ease;cursor:pointer;overflow:hidden;box-shadow:0 2px 10px rgba(23,34,43,.05)}
 .ticket::after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:0;transition:opacity .3s}
-.ticket:hover{border-color:rgba(201,168,76,.5);transform:translateY(-6px);box-shadow:var(--shadow-gold)}
+.ticket:hover{border-color:rgba(14,110,85,.35);transform:translateY(-5px);box-shadow:var(--shadow-gold)}
 .ticket:hover::after{opacity:1}
 .ticket.cust .code{color:var(--teal)}
 .ticket.work .code{color:var(--accent2)}
 .ticket.adm .code{color:var(--accent)}
 .tIcon{width:44px;height:44px;border-radius:12px;background:var(--navy);color:var(--teal);display:grid;place-items:center;font-weight:700;font-family:var(--mono);font-size:14px;margin-bottom:16px}
-.ticket h3{font-size:26px;margin:0 0 8px;font-weight:700;letter-spacing:-.5px;color:var(--ink)}
-.code{font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;letter-spacing:.15em;margin-bottom:10px;display:block;text-transform:uppercase}
-.ticket p{color:var(--muted);line-height:1.6;font-size:14.5px;margin:0 0 20px;min-height:64px;font-weight:300}
+.ticket h3{font-size:24px;margin:0 0 8px;font-weight:700;letter-spacing:-.4px;color:var(--ink)}
+.code{font-family:"Inter",sans-serif;font-size:12px;font-weight:700;letter-spacing:.14em;margin-bottom:10px;display:block;text-transform:uppercase}
+.ticket p{color:var(--muted);line-height:1.6;font-size:14.5px;margin:0 0 20px;min-height:64px;font-weight:400}
 .barcode{display:none}
 .stamp{display:none}
 .ticket .go{display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14.5px;color:var(--teal)}
 .ticket .go em{font-style:normal;background:var(--navy);border-radius:999px;padding:7px 14px;font-size:15px;color:var(--ink)}
 
-.panel{margin-top:24px;padding:24px;border:1px solid rgba(255,255,255,.06);border-radius:20px;background:var(--paper);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.panel{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:var(--shadow)}
 .head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-.title{font-size:22px;font-weight:700;margin:0;letter-spacing:-.5px;color:var(--ink)}
+.title{font-size:21px;font-weight:700;margin:0;letter-spacing:-.4px;color:var(--ink)}
 .sub,.muted{color:var(--muted);line-height:1.5;font-size:14px}
-.btn{min-height:44px;border:0;border-radius:999px;padding:0 20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:14.5px;transition:all .25s ease;font-family:"DM Sans",sans-serif;letter-spacing:.2px}
+.btn{min-height:44px;border:0;border-radius:999px;padding:0 20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:14.5px;transition:all .2s ease;font-family:"Inter",sans-serif;letter-spacing:.1px}
 .btn:hover{transform:translateY(-2px)}
-.primary{background:linear-gradient(135deg,var(--teal),#8B6914);color:#0A0A0F;font-weight:700;box-shadow:0 4px 20px rgba(201,168,76,.3)}
-.primary:hover{box-shadow:0 8px 30px rgba(201,168,76,.4)}
+.primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(14,110,85,.28)}
+.primary:hover{box-shadow:0 8px 24px rgba(14,110,85,.35)}
 .dark{background:transparent;color:var(--teal);border:1.5px solid var(--teal)}
-.dark:hover{background:rgba(201,168,76,.1)}
-.amberBtn{background:var(--teal2);color:#0A0A0F}
-.soft{background:var(--navy);color:var(--teal);border:1px solid rgba(201,168,76,.2)}
-.soft:hover{background:var(--teal);color:#0A0A0F}
-.danger{background:var(--red-wash);color:var(--red);border:1px solid rgba(231,76,60,.3)}
-.warn{background:rgba(243,156,18,.12);color:var(--warning);border:1px solid rgba(243,156,18,.3)}
-.light{background:var(--navy);border:1px solid rgba(255,255,255,.08);color:var(--ink)}
+.dark:hover{background:var(--teal-wash)}
+.amberBtn{background:var(--accent2);color:#fff}
+.soft{background:var(--navy);color:var(--teal);border:1px solid rgba(14,110,85,.18)}
+.soft:hover{background:var(--teal);color:#fff}
+.danger{background:var(--red-wash);color:var(--red);border:1px solid rgba(214,69,69,.3)}
+.warn{background:rgba(201,122,18,.12);color:var(--warning);border:1px solid rgba(201,122,18,.3)}
+.light{background:var(--navy);border:1px solid var(--line);color:var(--ink)}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .grid2{display:grid;grid-template-columns:300px 1fr;gap:18px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.field{margin-bottom:12px}
-.field label{display:block;margin-bottom:7px;color:var(--muted);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
-.field input,.field select,.field textarea{width:100%;min-height:46px;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:11px 15px;outline:0;background:var(--navy);color:var(--ink)}
+.field{margin-bottom:14px}
+.field label{display:block;margin-bottom:7px;color:var(--muted);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.09em}
+.field input,.field select,.field textarea{width:100%;min-height:46px;border:1.5px solid var(--line);border-radius:13px;padding:11px 15px;outline:0;background:var(--navy);color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease}
 .field textarea{min-height:80px;resize:vertical}
-.field input::placeholder,.field textarea::placeholder{color:#4A4860}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+.field input::placeholder,.field textarea::placeholder{color:#94A3A0}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-wash);background:var(--paper)}
+.field .fieldError{display:none;color:var(--red);font-size:12px;font-weight:600;margin-top:6px}
+.field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--red);background:var(--red-wash)}
+.field.invalid .fieldError{display:block}
+.field.valid input,.field.valid select,.field.valid textarea{border-color:var(--green)}
 .chips{display:grid;grid-template-columns:repeat(6,minmax(112px,1fr));gap:12px}
-.chip{min-height:90px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:var(--paper);text-align:left;padding:14px;transition:all .25s ease;color:var(--ink)}
-.chip:hover{border-color:rgba(201,168,76,.4);transform:translateY(-3px)}
-.chip.active{background:rgba(201,168,76,.08);border-color:var(--teal)}
+.chip{min-height:90px;border:1px solid var(--line);border-radius:14px;background:var(--paper);text-align:left;padding:14px;transition:all .2s ease;color:var(--ink)}
+.chip:hover{border-color:rgba(14,110,85,.35);transform:translateY(-3px)}
+.chip.active{background:var(--teal-wash);border-color:var(--teal)}
 .icon{width:32px;height:32px;border-radius:8px;background:var(--navy);color:var(--teal);display:grid;place-items:center;font-size:11px;font-weight:700;margin-bottom:9px;font-family:var(--mono)}
-.chip.active .icon{background:var(--teal);color:#0A0A0F}
+.chip.active .icon{background:var(--teal);color:#fff}
 .worker{min-height:320px;padding:18px;display:flex;flex-direction:column;border-radius:20px}
 .row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
-.avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#8B6914,var(--accent2));color:#fff;overflow:hidden;display:grid;place-items:center;font-weight:700;flex:0 0 auto;font-family:var(--display);border:2px solid rgba(201,168,76,.2)}
+.avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--accent2));color:#fff;overflow:hidden;display:grid;place-items:center;font-weight:700;flex:0 0 auto;font-family:var(--display);border:2px solid rgba(14,110,85,.18)}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .name{font-weight:600;color:var(--ink)}
 .meta{font-size:13px;color:var(--muted);line-height:1.5}
 .tags{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}
-.tag{min-height:25px;border-radius:999px;padding:4px 11px;background:var(--navy);color:var(--muted);font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.06);letter-spacing:.02em}
-.green{background:var(--green-wash);color:var(--green);border:1px solid rgba(46,204,113,.3)}
-.amber{background:rgba(243,156,18,.14);color:var(--warning);border:1px solid rgba(243,156,18,.3)}
-.blue{background:rgba(78,159,245,.14);color:var(--accent);border:1px solid rgba(78,159,245,.3)}
-.exp{flex:1;color:var(--muted);line-height:1.55;font-size:14px;font-weight:300}
+.tag{min-height:25px;border-radius:999px;padding:4px 11px;background:var(--navy);color:var(--muted);font-size:11px;font-weight:600;border:1px solid var(--line);letter-spacing:.02em}
+.green{background:var(--green-wash);color:var(--green);border:1px solid rgba(31,174,107,.3)}
+.amber{background:rgba(201,122,18,.13);color:var(--warning);border:1px solid rgba(201,122,18,.3)}
+.blue{background:rgba(47,125,224,.12);color:var(--accent);border:1px solid rgba(47,125,224,.3)}
+.exp{flex:1;color:var(--muted);line-height:1.55;font-size:14px;font-weight:400}
 .foot{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:15px}
-.price{font-size:20px;font-weight:700;color:var(--teal);font-family:var(--display)}
-.drawer{padding:15px;display:grid;gap:8px;align-content:start;border:1px solid rgba(255,255,255,.06);border-radius:20px;background:var(--paper)}
+.price{font-size:19px;font-weight:700;color:var(--teal);font-family:var(--display)}
+.drawer{padding:15px;display:grid;gap:8px;align-content:start;border:1px solid var(--line);border-radius:20px;background:var(--paper)}
 .menuBtn{width:100%;justify-content:flex-start}
 .list{display:grid;gap:12px}
-.card{padding:16px;border:1px solid rgba(255,255,255,.06);border-radius:16px;background:var(--paper)}
+.card{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
 .statusLine{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat{padding:16px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:var(--paper)}
-.stat strong{display:block;font-size:24px;font-family:var(--display);font-weight:700;color:var(--teal)}
+.stat{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+.stat strong{display:block;font-size:23px;font-family:var(--display);font-weight:700;color:var(--teal)}
 .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-.empty{border:1px dashed rgba(255,255,255,.12);border-radius:16px;padding:26px;text-align:center;color:var(--muted);font-weight:500}
-.chatBox{height:250px;overflow:auto;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px;background:var(--wash)}
+.empty{border:1px dashed var(--line);border-radius:16px;padding:26px;text-align:center;color:var(--muted);font-weight:500}
+.chatBox{height:250px;overflow:auto;border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--wash)}
 .chatMsg{margin-bottom:10px;padding:10px 14px;border-radius:14px;background:var(--navy);color:var(--ink)}
-.chatMsg.me{background:rgba(201,168,76,.12);color:var(--teal2)}
+.chatMsg.me{background:var(--teal-wash);color:var(--teal)}
 .hamb{display:none}
-.toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:200;display:none;max-width:min(92vw,580px);border-radius:999px;background:var(--paper);border:1px solid rgba(201,168,76,.25);color:var(--ink);padding:13px 20px;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:200;display:none;max-width:min(92vw,580px);border-radius:999px;background:var(--ink);border:1px solid rgba(23,34,43,.2);color:#fff;padding:13px 20px;font-weight:600;box-shadow:0 16px 36px rgba(23,34,43,.28)}
 .toast.show{display:block}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--teal)}
 
 /* live map + tracking */
-.mapBox{height:320px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-.mapBoxSm{height:190px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.mapBox{height:320px;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.mapBoxSm{height:190px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
 .trackHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .trackStats{display:flex;gap:18px}
-.trackStats div strong{display:block;font-family:var(--display);font-size:20px;font-weight:700;color:var(--teal)}
+.trackStats div strong{display:block;font-family:var(--display);font-size:19px;font-weight:700;color:var(--teal)}
 .trackStats div span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.vanIcon{background:var(--teal);color:#0A0A0F;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:15px;border:2px solid #0A0A0F;box-shadow:0 3px 8px rgba(0,0,0,.5)}
-.pinIcon{background:var(--red);color:#fff;border-radius:50% 50% 50% 0;width:26px;height:26px;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #0A0A0F;box-shadow:0 3px 8px rgba(0,0,0,.5)}
+.vanIcon{background:var(--teal);color:#fff;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:15px;border:2px solid #fff;box-shadow:0 3px 8px rgba(23,34,43,.3)}
+.pinIcon{background:var(--red);color:#fff;border-radius:50% 50% 50% 0;width:26px;height:26px;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(23,34,43,.3)}
 .pinIcon span{transform:rotate(45deg);font-size:12px}
-.shareBar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-radius:16px;background:var(--navy);border:1px solid rgba(201,168,76,.15);color:var(--ink);margin-bottom:16px;flex-wrap:wrap}
+.shareBar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-radius:16px;background:var(--navy);border:1px solid var(--line);color:var(--ink);margin-bottom:16px;flex-wrap:wrap}
 .shareBar .left{display:flex;align-items:center;gap:10px}
-.toggle{position:relative;width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,.12);border:0;flex:0 0 auto}
-.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease}
+.toggle{position:relative;width:46px;height:26px;border-radius:999px;background:#D7DEDC;border:0;flex:0 0 auto}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease;box-shadow:0 1px 3px rgba(23,34,43,.3)}
 .toggle.on{background:var(--green)}
 .toggle.on::after{transform:translateX(20px)}
 
-.modalCover{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.75);backdrop-filter:blur(8px)}
+.modalCover{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(23,34,43,.55);backdrop-filter:blur(6px)}
 .modalCover.open{display:flex}
-.modal{width:min(860px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(201,168,76,.2);border-radius:22px;background:var(--paper);box-shadow:var(--shadow);animation:slideUp .3s ease}
+.modal{width:min(860px,100%);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow);animation:slideUp .3s ease}
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modalHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)}
+.modalHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
 .modalBody{padding:22px}
-.summary{border-radius:14px;background:var(--navy);border:1px solid rgba(201,168,76,.15);color:var(--ink);padding:18px}
+.summary{border-radius:14px;background:var(--navy);border:1px solid var(--line);color:var(--ink);padding:18px}
 .sum{display:flex;justify-content:space-between;padding:8px 0;color:var(--muted);font-size:14px}
-.sum.total{border-top:1px solid rgba(255,255,255,.1);margin-top:8px;padding-top:14px;color:var(--ink);font-weight:700;font-size:20px;font-family:var(--display)}
+.sum.total{border-top:1px solid var(--line);margin-top:8px;padding-top:14px;color:var(--ink);font-weight:700;font-size:19px;font-family:var(--display)}
 .sum.total span:last-child{color:var(--teal)}
 
 @media(max-width:940px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:repeat(2,1fr)}.chips{grid-template-columns:repeat(3,1fr)}.statusLine{grid-template-columns:repeat(2,1fr)}.ticketRow{grid-template-columns:1fr}}
@@ -450,11 +454,73 @@ let customerGeo=JSON.parse(localStorage.fixitCustomerGeo||"null");
 let bookingGeo=null,shareWatchId=null,trackTimer=null,trackMapObj=null,trackMarkers={};
 let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
 
-async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"API failed");return d}
+async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Something went wrong. Please try again.");return d}
 function headers(admin=false){let h={"Content-Type":"application/json"};if(admin)h["x-api-key"]=adminKey;return h}
 function custHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+customerToken}}
 function workHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+workerToken}}
-function toast(m){qs("toast").textContent=m;qs("toast").classList.add("show");setTimeout(()=>qs("toast").classList.remove("show"),2800)}
+function toast(m,kind){let t=qs("toast");t.textContent=m;t.className="toast show"+(kind?" "+kind:"");setTimeout(()=>t.classList.remove("show"),3200)}
+function errToast(m){toast(m,"error")}
+function okToast(m){toast(m,"success")}
+
+/* ---- field-level validation helpers ----
+   Every input lives inside a <div class="field">. setFieldError adds a red
+   outline + an inline message right under that field; clearFieldError removes
+   it once the value looks right, so people see exactly what to fix instead
+   of a request silently failing. */
+function setFieldError(id,msg){
+  let input=qs(id);if(!input)return false;
+  let wrap=input.closest(".field");
+  if(!wrap){errToast(msg);return false}
+  wrap.classList.add("invalid");wrap.classList.remove("valid");
+  let err=wrap.querySelector(".fieldError");
+  if(!err){err=document.createElement("div");err.className="fieldError";wrap.appendChild(err)}
+  err.textContent=msg;
+  return false;
+}
+function clearFieldError(id){
+  let input=qs(id);if(!input)return true;
+  let wrap=input.closest(".field");if(!wrap)return true;
+  wrap.classList.remove("invalid");wrap.classList.add("valid");
+  let err=wrap.querySelector(".fieldError");if(err)err.textContent="";
+  return true;
+}
+function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
+function requireText(id,label,min=2){
+  let v=(qs(id).value||"").trim();
+  if(v.length<min)return setFieldError(id,`Enter ${label.toLowerCase()}`+(min>1?` (at least ${min} characters)`:""));
+  return clearFieldError(id);
+}
+function requireEmailIfPresent(id){
+  let v=(qs(id).value||"").trim();
+  if(!v)return clearFieldError(id);
+  if(!isValidEmail(v))return setFieldError(id,"Enter a valid email address");
+  return clearFieldError(id);
+}
+function requirePhone10(id){
+  let v=(qs(id).value||"").replace(/\D/g,"");
+  if(v.length!==10)return setFieldError(id,"Enter a valid 10 digit phone number");
+  return clearFieldError(id);
+}
+function requireOtp6(id){
+  let v=(qs(id).value||"").trim();
+  if(!/^\d{6}$/.test(v))return setFieldError(id,"Enter the 6-digit code");
+  return clearFieldError(id);
+}
+function requireNumberMin(id,label,min){
+  let v=Number(qs(id).value);
+  if(!qs(id).value||!Number.isFinite(v)||v<min)return setFieldError(id,`Enter ${label} of at least ${min}`);
+  return clearFieldError(id);
+}
+/* Every button on this page calls an async function straight from onclick,
+   with no .catch() of its own. Without this, a rejected request (wrong OTP,
+   wrong admin key, duplicate booking, expired session, server validation
+   failure, etc.) fails completely silently — nothing appears on screen.
+   This is the single choke point that guarantees every such failure surfaces
+   to the person as a visible red toast instead of vanishing. */
+window.addEventListener("unhandledrejection",e=>{
+  errToast((e.reason&&e.reason.message)||"That didn't go through. Please check the details and try again.");
+  e.preventDefault();
+});
 
 function show(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -476,7 +542,7 @@ async function boot(){
   fillCustomer();
   if(reviewBookingId)openReview(reviewBookingId);
 }
-boot().catch(e=>toast(e.message));
+boot().catch(e=>errToast(e.message));
 
 function renderPreview(){
   qs("workersPreview").innerHTML=workers.slice(0,3).map(w=>`<article class="card"><div class="row"><div><div class="name">${esc(w.service)} available</div><div class="meta">${esc(w.area)} area - ${money(w.charge)} base</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div></article>`).join("")||'<div class="empty">No workers yet.</div>';
@@ -501,14 +567,14 @@ function renderWorkers(){
 }
 
 function useCustomerLocation(){
-  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
+  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
   qs("customerGeoNote").textContent="Reading your current location...";
   navigator.geolocation.getCurrentPosition(pos=>{
     customerGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};
     localStorage.fixitCustomerGeo=JSON.stringify(customerGeo);
     qs("customerGeoNote").textContent=`Location ready. Showing workers inside ${settings.maxServiceRadiusKm||50} km.`;
     renderWorkers();
-  },()=>{qs("customerGeoNote").textContent="Location permission denied. You can still book using the area centre.";toast("Location permission denied")},{enableHighAccuracy:true,timeout:8000});
+  },()=>{qs("customerGeoNote").textContent="Location permission denied. You can still book using the area centre.";errToast("Location permission denied")},{enableHighAccuracy:true,timeout:8000});
 }
 function fillCustomer(){
   qs("cName").value=currentCustomer.name||"";qs("cPhone").value=currentCustomer.phone||"";
@@ -531,7 +597,7 @@ async function previewCustomerPhoto(){
     if(!file)return;
     pendingCustomerPhoto=file;
     qs("cPhotoPreview").innerHTML=`<img src="${file.dataUrl}" alt="Profile photo">`;
-  }catch(e){toast(e.message||"Could not read that file")}
+  }catch(e){errToast(e.message||"Could not read that file")}
 }
 function custSection(id){document.querySelectorAll(".custSec").forEach(s=>s.style.display="none");qs(id).style.display="block"}
 function toggleCustMenu(){qs("custMenu").classList.toggle("open")}
@@ -543,20 +609,23 @@ function renderCustomerAuthState(){
   if(loggedIn){qs("custLoggedName").textContent=currentCustomer.name||"Customer";qs("custLoggedPhone").textContent=currentCustomer.phone;}
 }
 async function sendCustomerOtp(){
+  let phoneOk=requirePhone10("cPhone"),emailOk=requireEmailIfPresent("cEmail");
+  if(!phoneOk||!emailOk){errToast("Please fix the highlighted field(s)");return}
   let phone=qs("cPhone").value.replace(/\D/g,"");
   let email=qs("cEmail").value.trim();
-  if(phone.length!==10){toast("Enter a valid 10 digit phone number");return}
   let d=await api("/api/customer/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({phone,email})});
   qs("custOtpBox").style.display="block";
   toast(d.devOtp?("Dev mode - your code is "+d.devOtp):d.message);
 }
 async function verifyCustomerOtp(){
+  let nameOk=requireText("cName","your name"),otpOk=requireOtp6("cOtp");
+  if(!nameOk||!otpOk){errToast("Please fix the highlighted field(s)");return}
   let phone=qs("cPhone").value.replace(/\D/g,""),name=qs("cName").value,otp=qs("cOtp").value.trim();
   let d=await api("/api/customer/otp/verify",{method:"POST",headers:headers(),body:JSON.stringify({phone,otp,name})});
   customerToken=d.token;localStorage.fixitCustomerToken=customerToken;
   currentCustomer=d.customer;localStorage.fixitCustomer=JSON.stringify(currentCustomer);
   qs("cOtp").value="";qs("custOtpBox").style.display="none";
-  fillCustomer();renderCustomerAuthState();toast("Phone verified");loadCustomer();
+  fillCustomer();renderCustomerAuthState();okToast("Phone verified");loadCustomer();
 }
 function customerLogout(){
   customerToken="";currentCustomer={};
@@ -565,13 +634,13 @@ function customerLogout(){
   fillCustomer();renderCustomerAuthState();toast("Logged out");
 }
 async function saveCustomerProfile(){
-  if(!customerToken){toast("Verify your phone first");return}
+  if(!customerToken){errToast("Verify your phone first");return}
   let c={name:qs("cProfileName").value||qs("cName").value,address:qs("cAddress").value,city:qs("cCity").value,notification:qs("cNotify").checked};
   if(pendingCustomerPhoto)c.photo=pendingCustomerPhoto;
   let d=await api("/api/customer/profile",{method:"POST",headers:custHeaders(),body:JSON.stringify(c)});
   currentCustomer=d.customer;localStorage.fixitCustomer=JSON.stringify(currentCustomer);
   pendingCustomerPhoto=null;
-  fillCustomer();toast("Profile saved");
+  fillCustomer();okToast("Profile saved");
 }
 
 async function loadCustomer(){
@@ -589,7 +658,7 @@ function bookingCards(list){
 }
 /* ---- booking modal ---- */
 function openBooking(id){
-  if(!customerToken){toast("Verify your phone number first to book a worker");show("customer");custSection("custBrowse");return}
+  if(!customerToken){errToast("Verify your phone number first to book a worker");show("customer");custSection("custBrowse");return}
   currentWorker=workers.find(w=>w.id==id);
   let fee=Math.round(currentWorker.charge*(settings.commissionRate||.1)),total=currentWorker.charge+fee;
   qs("bName").value=currentCustomer.name||"";qs("bPhone").value=currentCustomer.phone||"";qs("bAddress").value=currentCustomer.address||"";
@@ -611,21 +680,27 @@ function openBooking(id){
 }function closeModal(){qs("bookingModal").classList.remove("open")}
 function customerFromModal(){return{name:qs("bName").value,phone:qs("bPhone").value,address:qs("bAddress").value,city:qs("cCity").value,note:qs("bNote").value,lat:bookingGeo?bookingGeo.lat:AMBI.lat,lng:bookingGeo?bookingGeo.lng:AMBI.lng}}
 
+function validateBookingForm(){
+  let nameOk=requireText("bName","your name"),addrOk=requireText("bAddress","your address",6),cityOk=requireText("cCity","your city");
+  return nameOk&&addrOk&&cityOk;
+}
 async function book(method){
+  if(!validateBookingForm()){errToast("Please fix the highlighted field(s)");return}
   let d=await api("/api/bookings",{method:"POST",headers:custHeaders(),body:JSON.stringify({workerId:currentWorker.id,customer:customerFromModal(),paymentMethod:method})});
   closeModal();
   currentCustomer={name:d.booking.customerName,phone:d.booking.customerPhone,address:d.booking.customerAddress,city:d.booking.customerCity};
   localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-  toast("Booking sent to worker");
+  okToast("Booking sent to worker");
   show("customer");custSection("custHome");
 }
 
 async function payRazorpay(){
+  if(!validateBookingForm()){errToast("Please fix the highlighted field(s) before paying");return}
   let total=currentWorker.charge+Math.round(currentWorker.charge*(settings.commissionRate||.1));
   let o=await api("/api/create-order",{method:"POST",headers:custHeaders(),body:JSON.stringify({amount:total*100,receipt:"fixit_"+Date.now()})});
   new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:settings.merchantName||"FixIt",description:currentWorker.service+" booking",
     handler:async r=>{await api("/api/verify-payment",{method:"POST",headers:custHeaders(),body:JSON.stringify(r)});await book("razorpay")},
-    modal:{ondismiss:()=>toast("Payment cancelled")}}).open();
+    modal:{ondismiss:()=>errToast("Payment cancelled")}}).open();
 }
 
 /* ---- live tracking (customer side) ---- */
@@ -635,7 +710,7 @@ function openTrack(bookingId){
   qs("trackModal").classList.add("open");
   if(!trackMapObj){
     trackMapObj=L.map("trackMap");
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(trackMapObj);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(trackMapObj);
   }
   setTimeout(()=>trackMapObj.invalidateSize(),80);
   pollTrack(bookingId);
@@ -679,26 +754,37 @@ function renderWorkerAuthState(){
   if(loggedIn)qs("workerLoggedPhone").textContent=workerPhone;
 }
 async function sendWorkerOtp(){
+  let phoneOk=requirePhone10("wLoginPhone"),emailOk=requireEmailIfPresent("wEmail");
+  if(!phoneOk||!emailOk){errToast("Please fix the highlighted field(s)");return}
   let phone=qs("wLoginPhone").value.replace(/\D/g,"");
   let email=qs("wEmail").value.trim();
-  if(phone.length!==10){toast("Enter a valid 10 digit phone number");return}
   let d=await api("/api/worker/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({phone,email})});
   qs("workerOtpBox").style.display="block";
   toast(d.devOtp?("Dev mode - your code is "+d.devOtp):d.message);
 }
 async function verifyWorkerOtp(){
+  let otpOk=requireOtp6("wOtp");
+  if(!otpOk){errToast("Enter the 6-digit code");return}
   let phone=qs("wLoginPhone").value.replace(/\D/g,""),otp=qs("wOtp").value.trim();
   let d=await api("/api/worker/otp/verify",{method:"POST",headers:headers(),body:JSON.stringify({phone,otp})});
   workerToken=d.token;workerPhone=phone;
   localStorage.fixitWorkerToken=workerToken;localStorage.fixitWorkerPhone=workerPhone;
   qs("wOtp").value="";qs("workerOtpBox").style.display="none";
-  renderWorkerAuthState();toast("Phone verified");workerDashboard();
+  renderWorkerAuthState();okToast("Phone verified");workerDashboard();
 }
 async function workerRegister(){
-  if(!workerToken){toast("Verify your phone first");return}
+  if(!workerToken){errToast("Verify your phone first");return}
+  let nameOk=requireText("rName","your name"),areaOk=requireText("rArea","your area"),
+      chargeOk=requireNumberMin("rCharge","a price",50),expOk=requireText("rExp","your experience",10);
+  let serviceOk=clearFieldError("rService");
+  if(!qs("rService").value){serviceOk=setFieldError("rService","Choose a service")}
+  let photoOk=clearFieldError("rPhoto"),idOk=clearFieldError("rId");
+  if(!qs("rPhoto").files[0]){photoOk=setFieldError("rPhoto","Upload a photo of yourself")}
+  if(!qs("rId").files[0]){idOk=setFieldError("rId","Upload an ID proof document")}
+  if(!(nameOk&&areaOk&&chargeOk&&expOk&&serviceOk&&photoOk&&idOk)){errToast("Please fix the highlighted field(s)");return}
   let payload={name:qs("rName").value,service:qs("rService").value,area:qs("rArea").value,charge:qs("rCharge").value,exp:qs("rExp").value,photo:await fileData(qs("rPhoto")),idProof:await fileData(qs("rId"))};
   let d=await api("/api/worker/register",{method:"POST",headers:workHeaders(),body:JSON.stringify(payload)});
-  toast("Submitted. Admin verification pending.");workerDashboard();
+  okToast("Submitted. Admin verification pending.");workerDashboard();
 }
 async function workerDashboard(){
   if(!workerToken)return;
@@ -719,16 +805,18 @@ async function workerDashboard(){
 }function stepsHtml(w){let verified=w.verificationStatus=="verified";return["Personal details","Documents uploaded","Admin verification","Dashboard active"].map((s,i)=>`<div class="card row"><b>${s}</b><span class="tag ${i<2||verified?"green":"amber"}">${i<2||verified?"Done":"Pending"}</span></div>`).join("")}
 async function updateWorkerStatus(status){await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({status})});workerDashboard();boot()}
 async function saveWorkerProfile(){
+  let chargeOk=requireNumberMin("wCharge","a price",50),areaOk=requireText("wArea","your area");
+  if(!(chargeOk&&areaOk)){errToast("Please fix the highlighted field(s)");return}
   await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({status:qs("wStatusSelect").value,charge:qs("wCharge").value,area:qs("wArea").value})});
-  toast("Worker profile updated");workerDashboard();boot();
+  okToast("Worker profile updated");workerDashboard();boot();
 }
 function useWorkerLocation(){
-  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
-  if(!workerToken){toast("Login as a worker first");return}
+  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
+  if(!workerToken){errToast("Login as a worker first");return}
   navigator.geolocation.getCurrentPosition(async pos=>{
     await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude})});
-    drawWorkerMap(pos.coords.latitude,pos.coords.longitude);toast("Worker location updated");boot();
-  },()=>toast("Could not read your location"),{enableHighAccuracy:true,timeout:8000});
+    drawWorkerMap(pos.coords.latitude,pos.coords.longitude);okToast("Worker location updated");boot();
+  },()=>errToast("Could not read your location"),{enableHighAccuracy:true,timeout:8000});
 }
 function workerLogout(){
   if(shareWatchId){navigator.geolocation.clearWatch(shareWatchId);shareWatchId=null}
@@ -757,8 +845,8 @@ function toggleShareLocation(){
     qs("shareToggle").classList.remove("on");qs("shareDot").classList.remove("live");qs("shareLabel").textContent="Live location off";
     return;
   }
-  if(!navigator.geolocation){toast("Geolocation not supported on this device");return}
-  if(!workerToken){toast("Login as a worker first");return}
+  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
+  if(!workerToken){errToast("Login as a worker first");return}
   qs("shareToggle").classList.add("on");qs("shareDot").classList.add("live");qs("shareLabel").textContent="Sharing live location";
   let last=0;
   shareWatchId=navigator.geolocation.watchPosition(async pos=>{
@@ -767,13 +855,13 @@ function toggleShareLocation(){
       await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude})});
       drawWorkerMap(pos.coords.latitude,pos.coords.longitude);
     }catch(e){}
-  },()=>toast("Could not read your location"),{enableHighAccuracy:true,maximumAge:5000});
+  },()=>errToast("Could not read your location"),{enableHighAccuracy:true,maximumAge:5000});
 }
 function drawWorkerMap(lat,lng){
   if(lat==null||lng==null)return;
   if(!workerMapObj){
     workerMapObj=L.map("workerMap",{zoomControl:false,attributionControl:false});
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19}).addTo(workerMapObj);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19}).addTo(workerMapObj);
     workerMapObj.setView([lat,lng],14);
   }
   setTimeout(()=>workerMapObj.invalidateSize(),80);
@@ -784,8 +872,8 @@ function drawWorkerMap(lat,lng){
 
 /* ---- customer help chat ---- */
 async function sendHelp(){
-  if(!customerToken){toast("Verify your phone first to chat with support");return}
-  let msg=qs("chatInput").value.trim();if(!msg)return;
+  if(!customerToken){errToast("Verify your phone first to chat with support");return}
+  let msg=qs("chatInput").value.trim();if(!msg){errToast("Type a message first");return}
   qs("chatBox").innerHTML+=`<div class="chatMsg me">${esc(msg)}</div>`;
   let d=await api("/api/help/chat",{method:"POST",headers:custHeaders(),body:JSON.stringify({message:msg})});
   qs("chatBox").innerHTML+=`<div class="chatMsg">${esc(d.reply)}</div>`;
@@ -794,8 +882,10 @@ async function sendHelp(){
 
 /* ---- admin ---- */
 async function adminLogin(){
+  if(!requireText("adminKey","the admin API key",4)){errToast("Enter the admin API key");return}
   adminKey=qs("adminKey").value;localStorage.fixitAdminKey=adminKey;
   await api("/api/admin/login",{method:"POST",headers:headers(true),body:"{}"});
+  clearFieldError("adminKey");
   loadAdmin();
 }
 async function loadAdmin(){
@@ -810,12 +900,12 @@ async function loadAdmin(){
 }
 async function reviewApp(id,action){
   await api(`/api/admin/worker-applications/${id}/${action}`,{method:"POST",headers:headers(true),body:JSON.stringify({reason:"Documents not clear"})});
-  toast("Application updated");loadAdmin();boot();
+  okToast("Application updated");loadAdmin();boot();
 }
 function drawAdminMap(list){
   if(!adminMapObj){
     adminMapObj=L.map("adminMap").setView([AMBI.lat,AMBI.lng],12);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(adminMapObj);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(adminMapObj);
   }
   setTimeout(()=>adminMapObj.invalidateSize(),80);
   let seen=new Set();
@@ -838,10 +928,10 @@ function drawAdminMap(list){
 function openReview(id){reviewBookingId=id;qs("reviewModal").classList.add("open")}
 function closeReview(){qs("reviewModal").classList.remove("open")}
 async function submitReview(){
-  if(!customerToken){toast("Verify your phone first to leave a review");return}
+  if(!customerToken){errToast("Verify your phone first to leave a review");return}
   let tags=[...document.querySelectorAll('#reviewModal input[type=checkbox]:checked')].map(x=>x.value);
   await api("/api/reviews",{method:"POST",headers:custHeaders(),body:JSON.stringify({bookingId:reviewBookingId,rating:qs("revStars").value,tags,comment:qs("revComment").value})});
-  toast("Review submitted");closeReview();
+  okToast("Review submitted");closeReview();
 }
 </script>
 </body>
