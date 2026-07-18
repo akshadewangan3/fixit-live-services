@@ -1,961 +1,231 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPISKEVI — Live Home Services</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#FDD835" />
+<title>FixIt — On‑demand repairs at your door</title>
+<meta name="description" content="Book verified technicians for bikes, ACs, plumbing, electrical & appliances. Live tracking. Rapido-style FixIt." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        brand: "#FDD835", ink: "#0B0B0F", cream: "#FFFDF5",
+        primary: "#0B0B0F", success: "#10B981", danger: "#EF4444",
+      },
+      fontFamily: { sans: ['Plus Jakarta Sans','ui-sans-serif','system-ui'], display: ['Sora','ui-sans-serif'] },
+      boxShadow: { soft: "0 6px 24px -8px rgba(20,15,5,0.18)", pop: "0 12px 40px -12px rgba(20,15,5,0.28)" },
+      borderRadius: { xl2: "1.25rem" },
+      animation: { pulseRing: "pulseRing 1.6s ease-out infinite" },
+      keyframes: { pulseRing: { "0%": { boxShadow: "0 0 0 0 rgba(253,216,53,.6)" }, "100%": { boxShadow: "0 0 0 22px rgba(253,216,53,0)" } } }
+    } }
+  };
+</script>
 <style>
-:root{
-  --ink:#17222B; --muted:#5C6B74; --line:rgba(23,34,43,.10); --paper:#FFFFFF; --wash:#F2F5F4;
-  --navy:#EEF2F1; --navy2:#E3E9E7;
-  --teal:#0E6E55; --teal2:#14997A; --teal-wash:rgba(14,110,85,.09); --red:#D64545; --red-wash:rgba(214,69,69,.10);
-  --green:#1FAE6B; --green-wash:rgba(31,174,107,.12); --accent:#2F7DE0; --accent2:#6C5CE0; --warning:#C97A12;
-  --shadow:0 10px 34px rgba(23,34,43,.09); --shadow-gold:0 10px 28px rgba(14,110,85,.16);
-  --display:"Sora",sans-serif; --mono:"IBM Plex Mono",monospace;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--wash);color:var(--ink);font-family:"Inter",sans-serif;overflow-x:hidden}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-h1,h2,h3{font-family:var(--display);letter-spacing:-.01em;font-weight:700}
-.mono{font-family:var(--mono)}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:var(--wash)}
-::-webkit-scrollbar-thumb{background:var(--teal);border-radius:4px}
-
-/* ---- top bar ---- */
-.top{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--line);background:rgba(255,255,255,.88);backdrop-filter:blur(20px)}
-.topin{max-width:1280px;margin:auto;padding:13px 22px;display:flex;gap:16px;align-items:center;justify-content:space-between}
-.brand{display:flex;gap:10px;align-items:center;font-family:var(--display);font-size:24px;font-weight:800;cursor:pointer;letter-spacing:-.7px;color:var(--ink)}
-.mark{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:var(--mono);font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(14,110,85,.35)}
-.tabs{display:flex;gap:4px;padding:5px;border:1px solid var(--line);border-radius:999px;background:var(--paper)}
-.tabs button{border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:600;min-height:36px;padding:0 16px;font-size:14px;transition:all .2s ease;font-family:"Inter",sans-serif}
-.tabs button.active{background:var(--teal);color:#fff;font-weight:700}
-.sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);font-weight:600}
-.dot{width:8px;height:8px;border-radius:50%;background:#C7D0CD}
-.dot.live{background:var(--green);box-shadow:0 0 0 4px var(--green-wash);animation:pulse 1.8s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-.screen{display:none}
-.screen.active{display:block}
-.wrap{max-width:1280px;margin:auto;padding:26px 22px 60px}
-
-/* ---- landing / role picker ---- */
-.dispatchHero{border-radius:22px;background:var(--paper);color:var(--ink);padding:clamp(30px,5vw,58px);position:relative;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
-.dispatchHero::before{content:"";position:absolute;top:-200px;right:-100px;width:600px;height:600px;background:radial-gradient(circle,rgba(14,110,85,.07) 0%,transparent 70%);pointer-events:none}
-.dispatchHero>*{position:relative}
-.eyebrow{font-family:"Inter",sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);background:var(--teal-wash);display:inline-flex;align-items:center;gap:8px;padding:7px 16px 7px 26px;border-radius:999px;border:1px solid rgba(14,110,85,.18);position:relative}
-.eyebrow::before{content:"";position:absolute;left:12px;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-.dispatchHero h1{font-size:clamp(32px,5vw,52px);line-height:1.1;margin:18px 0 12px;font-weight:800;letter-spacing:-1.5px;color:var(--ink);max-width:700px}
-.dispatchHero .lead{font-size:17px;line-height:1.7;color:var(--muted);max-width:520px;font-family:"Inter",sans-serif;font-weight:400}
-.liveStrip{display:flex;gap:32px;flex-wrap:wrap;margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
-.liveStrip div strong{display:block;font-family:var(--display);font-size:26px;font-weight:700;color:var(--teal)}
-.liveStrip div span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
-
-.ticketRow{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:26px}
-.roleRow{grid-template-columns:repeat(2,1fr)}
-.roleRow .ticket{padding:34px 30px 32px;text-align:left}
-.roleRow .tIcon{font-size:38px;margin-bottom:14px;width:auto;height:auto;background:none;box-shadow:none;display:block}
-.staffLink{text-align:center;margin-top:26px}
-.staffLink a{color:var(--muted);font-weight:600;font-size:13px;text-decoration:none;border-bottom:1px dashed var(--line)}
-.staffLink a:hover{color:var(--teal)}
-.ticket{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px 24px 30px;transition:all .25s ease;cursor:pointer;overflow:hidden;box-shadow:0 2px 10px rgba(23,34,43,.05)}
-.ticket::after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:0;transition:opacity .3s}
-.ticket:hover{border-color:rgba(14,110,85,.35);transform:translateY(-5px);box-shadow:var(--shadow-gold)}
-.ticket:hover::after{opacity:1}
-.ticket.cust .code{color:var(--teal)}
-.ticket.work .code{color:var(--accent2)}
-.ticket.adm .code{color:var(--accent)}
-.tIcon{width:44px;height:44px;border-radius:12px;background:var(--navy);color:var(--teal);display:grid;place-items:center;font-weight:700;font-family:var(--mono);font-size:14px;margin-bottom:16px}
-.ticket h3{font-size:24px;margin:0 0 8px;font-weight:700;letter-spacing:-.4px;color:var(--ink)}
-.code{font-family:"Inter",sans-serif;font-size:12px;font-weight:700;letter-spacing:.14em;margin-bottom:10px;display:block;text-transform:uppercase}
-.ticket p{color:var(--muted);line-height:1.6;font-size:14.5px;margin:0 0 20px;min-height:64px;font-weight:400}
-.barcode{display:none}
-.stamp{display:none}
-.ticket .go{display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14.5px;color:var(--teal)}
-.ticket .go em{font-style:normal;background:var(--navy);border-radius:999px;padding:7px 14px;font-size:15px;color:var(--ink)}
-
-.panel{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:var(--shadow)}
-.head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-.title{font-size:21px;font-weight:700;margin:0;letter-spacing:-.4px;color:var(--ink)}
-.sub,.muted{color:var(--muted);line-height:1.5;font-size:14px}
-.btn{min-height:44px;border:0;border-radius:999px;padding:0 20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:14.5px;transition:all .2s ease;font-family:"Inter",sans-serif;letter-spacing:.1px}
-.btn:hover{transform:translateY(-2px)}
-.primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(14,110,85,.28)}
-.primary:hover{box-shadow:0 8px 24px rgba(14,110,85,.35)}
-.dark{background:transparent;color:var(--teal);border:1.5px solid var(--teal)}
-.dark:hover{background:var(--teal-wash)}
-.amberBtn{background:var(--accent2);color:#fff}
-.soft{background:var(--navy);color:var(--teal);border:1px solid rgba(14,110,85,.18)}
-.soft:hover{background:var(--teal);color:#fff}
-.danger{background:var(--red-wash);color:var(--red);border:1px solid rgba(214,69,69,.3)}
-.warn{background:rgba(201,122,18,.12);color:var(--warning);border:1px solid rgba(201,122,18,.3)}
-.light{background:var(--navy);border:1px solid var(--line);color:var(--ink)}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.grid2{display:grid;grid-template-columns:300px 1fr;gap:18px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.field{margin-bottom:14px}
-.field label{display:block;margin-bottom:7px;color:var(--muted);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.09em}
-.field input,.field select,.field textarea{width:100%;min-height:46px;border:1.5px solid var(--line);border-radius:13px;padding:11px 15px;outline:0;background:var(--navy);color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease}
-.field textarea{min-height:80px;resize:vertical}
-.field input::placeholder,.field textarea::placeholder{color:#94A3A0}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-wash);background:var(--paper)}
-.field .fieldError{display:none;color:var(--red);font-size:12px;font-weight:600;margin-top:6px}
-.field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--red);background:var(--red-wash)}
-.field.invalid .fieldError{display:block}
-.field.valid input,.field.valid select,.field.valid textarea{border-color:var(--green)}
-.chips{display:grid;grid-template-columns:repeat(6,minmax(112px,1fr));gap:12px}
-.chip{min-height:90px;border:1px solid var(--line);border-radius:14px;background:var(--paper);text-align:left;padding:14px;transition:all .2s ease;color:var(--ink)}
-.chip:hover{border-color:rgba(14,110,85,.35);transform:translateY(-3px)}
-.chip.active{background:var(--teal-wash);border-color:var(--teal)}
-.icon{width:32px;height:32px;border-radius:8px;background:var(--navy);color:var(--teal);display:grid;place-items:center;font-size:11px;font-weight:700;margin-bottom:9px;font-family:var(--mono)}
-.chip.active .icon{background:var(--teal);color:#fff}
-.worker{min-height:320px;padding:18px;display:flex;flex-direction:column;border-radius:20px}
-.row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
-.avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--accent2));color:#fff;overflow:hidden;display:grid;place-items:center;font-weight:700;flex:0 0 auto;font-family:var(--display);border:2px solid rgba(14,110,85,.18)}
-.avatar img{width:100%;height:100%;object-fit:cover}
-.name{font-weight:600;color:var(--ink)}
-.meta{font-size:13px;color:var(--muted);line-height:1.5}
-.tags{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}
-.tag{min-height:25px;border-radius:999px;padding:4px 11px;background:var(--navy);color:var(--muted);font-size:11px;font-weight:600;border:1px solid var(--line);letter-spacing:.02em}
-.green{background:var(--green-wash);color:var(--green);border:1px solid rgba(31,174,107,.3)}
-.amber{background:rgba(201,122,18,.13);color:var(--warning);border:1px solid rgba(201,122,18,.3)}
-.blue{background:rgba(47,125,224,.12);color:var(--accent);border:1px solid rgba(47,125,224,.3)}
-.exp{flex:1;color:var(--muted);line-height:1.55;font-size:14px;font-weight:400}
-.foot{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:15px}
-.price{font-size:19px;font-weight:700;color:var(--teal);font-family:var(--display)}
-.drawer{padding:15px;display:grid;gap:8px;align-content:start;border:1px solid var(--line);border-radius:20px;background:var(--paper)}
-.menuBtn{width:100%;justify-content:flex-start}
-.list{display:grid;gap:12px}
-.card{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
-.statusLine{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
-.stat strong{display:block;font-size:23px;font-family:var(--display);font-weight:700;color:var(--teal)}
-.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-.empty{border:1px dashed var(--line);border-radius:16px;padding:26px;text-align:center;color:var(--muted);font-weight:500}
-.chatBox{height:250px;overflow:auto;border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--wash)}
-.chatMsg{margin-bottom:10px;padding:10px 14px;border-radius:14px;background:var(--navy);color:var(--ink)}
-.chatMsg.me{background:var(--teal-wash);color:var(--teal)}
-.hamb{display:none}
-.toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:200;display:none;max-width:min(92vw,580px);border-radius:999px;background:var(--ink);border:1px solid rgba(23,34,43,.2);color:#fff;padding:13px 20px;font-weight:600;box-shadow:0 16px 36px rgba(23,34,43,.28)}
-.toast.show{display:block}
-.toast.error{background:var(--red)}
-.toast.success{background:var(--teal)}
-
-/* live map + tracking */
-.mapBox{height:320px;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
-.mapBoxSm{height:190px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
-.trackHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-.trackStats{display:flex;gap:18px}
-.trackStats div strong{display:block;font-family:var(--display);font-size:19px;font-weight:700;color:var(--teal)}
-.trackStats div span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.vanIcon{background:var(--teal);color:#fff;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:15px;border:2px solid #fff;box-shadow:0 3px 8px rgba(23,34,43,.3)}
-.pinIcon{background:var(--red);color:#fff;border-radius:50% 50% 50% 0;width:26px;height:26px;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(23,34,43,.3)}
-.pinIcon span{transform:rotate(45deg);font-size:12px}
-.shareBar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-radius:16px;background:var(--navy);border:1px solid var(--line);color:var(--ink);margin-bottom:16px;flex-wrap:wrap}
-.shareBar .left{display:flex;align-items:center;gap:10px}
-.toggle{position:relative;width:46px;height:26px;border-radius:999px;background:#D7DEDC;border:0;flex:0 0 auto}
-.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease;box-shadow:0 1px 3px rgba(23,34,43,.3)}
-.toggle.on{background:var(--green)}
-.toggle.on::after{transform:translateX(20px)}
-
-.modalCover{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(23,34,43,.55);backdrop-filter:blur(6px)}
-.modalCover.open{display:flex}
-.modal{width:min(860px,100%);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow);animation:slideUp .3s ease}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modalHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
-.modalBody{padding:22px}
-.summary{border-radius:14px;background:var(--navy);border:1px solid var(--line);color:var(--ink);padding:18px}
-.sum{display:flex;justify-content:space-between;padding:8px 0;color:var(--muted);font-size:14px}
-.sum.total{border-top:1px solid var(--line);margin-top:8px;padding-top:14px;color:var(--ink);font-weight:700;font-size:19px;font-family:var(--display)}
-.sum.total span:last-child{color:var(--teal)}
-
-@media(max-width:940px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:repeat(2,1fr)}.chips{grid-template-columns:repeat(3,1fr)}.statusLine{grid-template-columns:repeat(2,1fr)}.ticketRow{grid-template-columns:1fr}}
-@media(max-width:640px){.topin{align-items:stretch;flex-direction:column}.tabs{display:grid;grid-template-columns:repeat(4,1fr)}.wrap{padding:16px 14px 40px}.grid3,.chips,.statusLine{grid-template-columns:1fr}.head,.foot{align-items:stretch;flex-direction:column}.drawer{display:none}.drawer.open{display:grid}.hamb{display:inline-flex}.liveStrip{gap:16px}}
-</style>
-
-<style id="episkevi-v2">
-:root{
---ink:#F7F5F2!important;
---muted:#B8BDC7!important;
---paper:#181C23!important;
---wash:#0F1115!important;
---line:rgba(255,255,255,.08)!important;
---teal:#D97706!important;
---teal2:#F59E0B!important;
-}
-body{background:#0F1115!important;color:#F7F5F2!important}
-.panel,.card,.ticket,.drawer,.stat,.dispatchHero{
-background:rgba(24,28,35,.92)!important;
-backdrop-filter:blur(12px)!important;
-}
-.btn,.tabs button{transition:all .25s ease!important}
-.btn:hover,.ticket:hover,.card:hover{
-transform:translateY(-4px)!important;
-}
-.mobile-bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#181C23;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;padding:10px;z-index:999}
-@media(min-width:900px){.mobile-bottom-nav{display:none}}
+  html,body{background:#FFFDF5;color:#0B0B0F;font-family:'Plus Jakarta Sans',sans-serif;}
+  h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-0.02em;}
+  .tap{transition:transform .15s ease;} .tap:active{transform:scale(.97);}
+  .card{background:#fff;border:1px solid #eee5c8;border-radius:1.25rem;box-shadow:0 6px 24px -8px rgba(20,15,5,.18);}
+  .fade-in{animation:fi .35s ease both;} @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .sheet{animation:sh .3s ease both;} @keyframes sh{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
-<body>
-<div id="toast" class="toast"></div>
-<header class="top"><div class="topin">
-  <div class="brand" onclick="show('landing')"><span class="mark">FI</span>EPISKEVI</div>
-  <nav class="tabs">
-    <button id="tabLanding" class="active" onclick="show('landing')">Dispatch</button>
-    <button id="tabCustomer" onclick="show('customer')">Customer</button>
-    <button id="tabWorker" onclick="show('worker')">Worker</button>
-    <button onclick="location.href='admin.html'">Admin</button>
-  </nav>
-  <div class="sync"><span id="syncDot" class="dot"></span><span id="sync">Connecting</span></div>
-</div></header>
+<body class="pb-24">
 
-<!-- ============ LANDING / DISPATCH BOARD ============ -->
-<main id="landing" class="screen active"><div class="wrap">
-  <section class="dispatchHero">
-    <div class="eyebrow">EPISKEVI · Ambikapur</div>
-    <h1>Are you booking a repair, or here to work?</h1>
-    <p class="lead">Pick your side to continue. Homeowners verify their phone and book a trusted, verified pro. Workers verify their phone, get approved, and start taking jobs.</p>
-    <div class="liveStrip">
-      <div><strong id="mWorkers">0</strong><span>Workers on the board</span></div>
-      <div><strong id="mOnline">0</strong><span>Online right now</span></div>
-      <div><strong id="mBookings">0</strong><span>Jobs dispatched</span></div>
-    </div>
-  </section>
-
-  <div class="ticketRow roleRow">
-    <article class="ticket cust" onclick="show('customer')">
-      <div class="tIcon">🏠</div>
-      <span class="code">I'M A CUSTOMER</span>
-      <h3>Book a worker</h3>
-      <p>Browse verified electricians, plumbers, carpenters and more. Verify your phone, book in a tap, and watch your worker's live location until they arrive.</p>
-      <div class="go">Continue as customer <em>&rarr;</em></div>
-    </article>
-
-    <article class="ticket work" onclick="show('worker')">
-      <div class="tIcon">🛠️</div>
-      <span class="code">I'M A WORKER</span>
-      <h3>Take jobs</h3>
-      <p>Verify your phone, register with photo and ID proof, get approved by admin, then go online and start accepting jobs near you.</p>
-      <div class="go">Continue as worker <em>&rarr;</em></div>
-    </article>
+<!-- Top bar -->
+<header class="sticky top-0 z-40 border-b border-black/5 bg-cream/80 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+    <a href="#/" class="flex items-center gap-2 tap">
+      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand shadow-soft">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>
+      </span>
+      <span class="font-display text-lg font-extrabold">FixIt</span>
+    </a>
+    <button class="flex flex-1 items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-left text-sm text-slate-500 tap max-w-md">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span class="truncate"><b class="text-black">Home</b> · MG Road, Bengaluru</span>
+    </button>
+    <button class="relative flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white tap">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+      <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger"></span>
+    </button>
   </div>
+</header>
 
-  <section class="panel"><div class="head"><div><h2 class="title">Who's on the board right now</h2><div class="sub">A quick look before you continue. Book from the Customer side.</div></div></div><div id="workersPreview" class="grid3"></div></section>
+<main id="app" class="mx-auto max-w-6xl px-4 pt-4"></main>
 
-  <div class="staffLink"><a href="admin.html">Staff / admin login &rarr;</a></div>
-</div></main>
-
-<!-- ============ CUSTOMER ============ -->
-<main id="customer" class="screen"><div class="wrap grid2">
-  <aside class="drawer open" id="custMenu">
-    <button class="btn soft menuBtn" onclick="custSection('custBrowse')">Book a worker</button>
-    <button class="btn soft menuBtn" onclick="custSection('custHome')">My bookings & tracking</button>
-    <button class="btn soft menuBtn" onclick="custSection('custProfile')">Profile</button>
-    <button class="btn soft menuBtn" onclick="custSection('custAddress')">Address</button>
-    <button class="btn soft menuBtn" onclick="custSection('custSettings')">App settings</button>
-    <button class="btn soft menuBtn" onclick="custSection('custHelp')">Help & support</button>
-  </aside>
-  <section class="panel" style="margin-top:0">
-    <div class="head"><div><h2 class="title">Customer desk</h2><div class="sub">Login with phone, book a verified worker, and track them live on the map.</div></div><button class="btn soft hamb" onclick="toggleCustMenu()">Menu</button></div>
-
-    <div id="custBrowse" class="custSec">
-      <div id="custLoginArea">
-        <div class="field"><label>Name</label><input id="cName" placeholder="Your name"></div>
-        <div class="field"><label>Phone</label><input id="cPhone" maxlength="10" placeholder="10 digit phone"></div>
-        <div class="field"><label>Email (recommended — code is sent here)</label><input id="cEmail" type="email" placeholder="you@email.com"></div>
-        <button class="btn primary" onclick="sendCustomerOtp()">Send verification code</button>
-        <div id="custOtpBox" style="display:none;margin-top:12px">
-          <div class="field"><label>Enter 6-digit code sent to your phone</label><input id="cOtp" maxlength="6" placeholder="123456"></div>
-          <div class="row"><button class="btn dark" onclick="verifyCustomerOtp()">Verify &amp; continue</button><button class="btn soft" onclick="sendCustomerOtp()">Resend code</button></div>
-        </div>
-      </div>
-      <div id="custLoggedInBar" class="card row" style="display:none;margin-bottom:14px;align-items:center">
-        <div class="row" style="gap:12px;align-items:center">
-          <div class="avatar" id="custLoggedAvatar" style="width:44px;height:44px;font-size:16px"></div>
-          <div><b id="custLoggedName"></b><div class="meta">Signed in as <span id="custLoggedPhone"></span></div></div>
-        </div>
-        <button class="btn danger" onclick="customerLogout()">Logout</button>
-      </div>
-      <div class="panel" style="padding:0;border:0;box-shadow:none;margin-top:18px">
-        <div class="head"><div><h3 class="title" style="font-size:20px">Services</h3></div></div>
-        <div id="services" class="chips"></div>
-      </div>
-      <div class="panel" style="padding:0;border:0;box-shadow:none;margin-top:6px">
-        <div class="head"><div><h3 class="title" style="font-size:20px">Book by profession</h3><div class="sub" id="workerSub">Worker identity stays private until the job is assigned.</div></div><div class="row"><input id="search" placeholder="Search service or area" oninput="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px;padding:0 10px"><select id="area" onchange="renderWorkers()" style="min-height:40px;border:1px solid var(--line);border-radius:7px"></select></div></div>
-        <div class="card row" style="margin-bottom:12px">
-          <div><b>Customer location</b><div class="meta" id="customerGeoNote">Use your current location so only workers within 50 km can accept.</div></div>
-          <button class="btn soft" onclick="useCustomerLocation()">Use current location</button>
-        </div>
-        <div id="workers" class="grid3"></div>
-      </div>
-    </div>
-
-    <div id="custHome" class="custSec" style="display:none">
-      <div id="custBookings" class="list"></div>
-    </div>
-
-    <div id="custProfile" class="custSec" style="display:none">
-      <div class="row" style="align-items:center;gap:16px;margin-bottom:18px">
-        <div class="avatar" id="cPhotoPreview" style="width:72px;height:72px;font-size:22px"></div>
-        <div>
-          <label class="btn light" for="cPhotoInput" style="cursor:pointer">Change photo</label>
-          <input id="cPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="previewCustomerPhoto()">
-          <div class="meta">PNG, JPG or WEBP, under 2.5 MB.</div>
-        </div>
-      </div>
-      <div class="field"><label>Name</label><input id="cProfileName"></div>
-      <div class="field"><label>Phone (verified)</label><input id="cProfilePhone" maxlength="10" disabled style="opacity:.65"></div>
-      <button class="btn primary" onclick="saveCustomerProfile()">Update profile</button>
-    </div>
-    <div id="custAddress" class="custSec" style="display:none">
-      <div class="field"><label>Address</label><textarea id="cAddress" placeholder="House, street, landmark"></textarea></div>
-      <div class="field"><label>City</label><input id="cCity" value="Ambikapur"></div>
-      <button class="btn primary" onclick="saveCustomerProfile()">Save address</button>
-    </div>
-    <div id="custSettings" class="custSec" style="display:none">
-      <div class="card"><div class="row"><div><b>Notifications</b><div class="meta">Booking updates and review reminders.</div></div><input id="cNotify" type="checkbox" checked></div></div>
-    </div>
-    <div id="custHelp" class="custSec" style="display:none">
-      <div class="chatBox" id="chatBox"></div>
-      <div class="row" style="margin-top:10px"><input id="chatInput" placeholder="Ask about booking, worker, refund..."><button class="btn dark" onclick="sendHelp()">Send</button></div>
-    </div>
-  </section>
-</div></main>
-
-<!-- ============ WORKER ============ -->
-<main id="worker" class="screen"><div class="wrap">
-  <section class="panel"><div class="head"><div><h2 class="title">Worker desk</h2><div class="sub">Register, get verified, go online, and share your live location.</div></div></div>
-    <div class="grid2">
-      <div>
-        <div id="workerLoginArea">
-          <h3>Login</h3>
-          <div class="field"><label>Worker phone</label><input id="wLoginPhone" maxlength="10"></div>
-          <div class="field"><label>Email (recommended — code is sent here)</label><input id="wEmail" type="email" placeholder="you@email.com"></div>
-          <button class="btn dark" onclick="sendWorkerOtp()">Send verification code</button>
-          <div id="workerOtpBox" style="display:none;margin-top:12px">
-            <div class="field"><label>Enter 6-digit code sent to your phone</label><input id="wOtp" maxlength="6" placeholder="123456"></div>
-            <div class="row"><button class="btn dark" onclick="verifyWorkerOtp()">Verify &amp; continue</button><button class="btn soft" onclick="sendWorkerOtp()">Resend code</button></div>
-          </div>
-        </div>
-        <div id="workerLoggedInBar" class="card row" style="display:none">
-          <div><b>Phone verified</b><div class="meta" id="workerLoggedPhone"></div></div>
-          <button class="btn danger" onclick="workerLogout()">Logout</button>
-        </div>
-        <div id="workerRegisterArea" style="display:none">
-          <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
-          <h3>New worker registration</h3>
-          <div class="meta" style="margin-bottom:10px">Your phone is already verified. Fill in your details below to submit for admin verification.</div>
-          <div class="field"><label>Name</label><input id="rName"></div>
-          <div class="field"><label>Service</label><select id="rService"></select></div>
-          <div class="field"><label>Area</label><input id="rArea" value="Ambikapur"></div>
-          <div class="field"><label>Charge</label><input id="rCharge" type="number" placeholder="300"></div>
-          <div class="field"><label>Experience</label><textarea id="rExp"></textarea></div>
-          <div class="field"><label>Photo</label><input id="rPhoto" type="file" accept="image/png,image/jpeg,image/webp"></div>
-          <div class="field"><label>ID proof</label><input id="rId" type="file" accept="image/png,image/jpeg,image/webp,application/pdf"></div>
-          <button class="btn primary" onclick="workerRegister()">Submit for verification</button>
-        </div>
-      </div>
-      <div>
-        <div class="shareBar">
-          <div class="left"><span id="shareDot" class="dot"></span><div><b id="shareLabel">Live location off</b><div class="meta" style="color:rgba(255,255,255,.7)">Turn on so customers can track you en route</div></div></div>
-          <button id="shareToggle" class="toggle" onclick="toggleShareLocation()"></button>
-        </div>
-        <div class="statusLine">
-          <div class="stat"><strong id="wJobs">0</strong><span>Bookings</span></div>
-          <div class="stat"><strong id="wEarn">Rs.0</strong><span>Earnings</span></div>
-          <div class="stat"><strong id="wRating">0</strong><span>Rating</span></div>
-          <div class="stat"><strong id="wStatus">-</strong><span>Status</span></div>
-        </div>
-        <div id="workerProfile" class="card" style="margin-top:14px"></div>
-        <div id="workerTools" class="card" style="margin-top:12px;display:none"></div>
-        <div id="workerMap" class="mapBoxSm" style="margin-top:12px"></div>
-        <div id="workerSteps" class="list" style="margin-top:12px"></div>
-        <h3>Incoming / active bookings</h3>
-        <div id="workerBookings" class="list"></div>
-      </div>
-    </div>
-  </section>
-</div></main>
-
-<!-- ============ ADMIN ============ -->
-<main id="admin" class="screen"><div class="wrap">
-  <section class="panel" id="adminLogin">
-    <div class="head"><div><h2 class="title">Admin desk</h2><div class="sub">Enter the admin API key to open the console.</div></div></div>
-    <div class="field"><label>Admin API key</label><input id="adminKey" type="password"></div>
-    <button class="btn dark" onclick="adminLogin()">Open console</button>
-  </section>
-  <div id="adminDash" style="display:none">
-    <section class="panel"><div class="statusLine">
-      <div class="stat"><strong id="aCustomers">0</strong><span>Customers</span></div>
-      <div class="stat"><strong id="aWorkers">0</strong><span>Workers</span></div>
-      <div class="stat"><strong id="aPending">0</strong><span>Pending verification</span></div>
-      <div class="stat"><strong id="aBookings">0</strong><span>Bookings</span></div>
-    </div></section>
-    <section class="panel"><div class="head"><div><h2 class="title">Live worker map</h2><div class="sub">Every worker's current position. Green = online, amber = busy, grey = offline.</div></div></div>
-      <div id="adminMap" class="mapBox"></div>
-    </section>
-    <section class="panel"><div class="head"><div><h2 class="title">Worker applications</h2></div></div><div id="adminApps" class="list"></div></section>
-    <section class="panel"><div class="head"><div><h2 class="title">Bookings</h2></div></div><div id="adminBookings" class="list"></div></section>
-  </div>
-</div></main>
-
-<!-- ============ MODALS ============ -->
-<div id="bookingModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Confirm booking</h2><button class="btn soft" onclick="closeModal()">Close</button></div>
-  <div class="modalBody grid2">
-    <div>
-      <div id="bookWorker" class="card"></div>
-      <div class="summary" style="margin-top:12px">
-        <div class="sum"><span>Service</span><b id="sBase"></b></div>
-        <div class="sum"><span>Platform fee</span><b id="sFee"></b></div>
-        <div class="sum total"><span>Total</span><span id="sTotal"></span></div>
-      </div>
-      <div class="meta" style="margin-top:10px" id="geoNote">Locating you so your worker can find you...</div>
-    </div>
-    <div>
-      <div class="field"><label>Name</label><input id="bName"></div>
-      <div class="field"><label>Phone (verified)</label><input id="bPhone" maxlength="10" disabled style="opacity:.65"></div>
-      <div class="field"><label>Address</label><textarea id="bAddress"></textarea></div>
-      <div class="field"><label>Issue</label><input id="bNote"></div>
-      <div class="row"><button class="btn primary" id="rzpBtn" onclick="payRazorpay()">Pay Razorpay</button><button class="btn dark" onclick="book('cash')">Book cash</button></div>
-      <button class="btn soft" style="width:100%;margin-top:10px" onclick="book('upi')">Book UPI</button>
-    </div>
-  </div>
-</div></div>
-
-<div id="trackModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Track your worker</h2><button class="btn soft" onclick="closeTrack()">Close</button></div>
-  <div class="modalBody">
-    <div class="trackHead">
-      <div><div class="name" id="trackWho">-</div><div class="meta" id="trackStatus">-</div></div>
-      <div class="trackStats">
-        <div><strong id="trackDist">-</strong><span>KM away</span></div>
-        <div><strong id="trackEta">-</strong><span>ETA mins</span></div>
-      </div>
-    </div>
-    <div id="trackMap" class="mapBox"></div>
-    <div class="row" style="margin-top:12px"><a class="btn soft" id="trackCall" href="#">Call worker</a><span class="meta">Updates every 5 seconds.</span></div>
-  </div>
-</div></div>
-
-<div id="reviewModal" class="modalCover"><div class="modal"><div class="modalHead"><h2 class="title">Review worker</h2><button class="btn soft" onclick="closeReview()">Close</button></div>
-  <div class="modalBody">
-    <div class="field"><label>Stars</label><select id="revStars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
-    <div class="tags"><label class="tag"><input type="checkbox" value="Good behaviour"> Good behaviour</label><label class="tag"><input type="checkbox" value="Excellent service"> Excellent service</label><label class="tag"><input type="checkbox" value="On time"> On time</label></div>
-    <div class="field"><label>Comment</label><textarea id="revComment"></textarea></div>
-    <button class="btn primary" onclick="submitReview()">Submit review</button>
-  </div>
-</div></div>
+<!-- Bottom nav -->
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-black/5 bg-cream/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+  <ul class="mx-auto flex max-w-6xl justify-around">
+    <li class="flex-1"><a data-nav href="#/" class="flex flex-col items-center gap-1 py-2.5 tap"><span class="pill flex h-9 w-14 items-center justify-center rounded-full bg-brand"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg></span><span class="text-[11px] font-bold">Home</span></a></li>
+    <li class="flex-1"><a data-nav href="#/bookings" class="flex flex-col items-center gap-1 py-2.5 tap text-slate-500"><span class="flex h-9 w-14 items-center justify-center rounded-full"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span class="text-[11px] font-semibold">Bookings</span></a></li>
+    <li class="flex-1"><a data-nav href="#/offers" class="flex flex-col items-center gap-1 py-2.5 tap text-slate-500"><span class="flex h-9 w-14 items-center justify-center rounded-full"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 12.6l-8-8a2 2 0 0 0-1.4-.6H4v7.2c0 .5.2 1 .6 1.4l8 8a2 2 0 0 0 2.8 0l5.2-5.2a2 2 0 0 0 0-2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="text-[11px] font-semibold">Offers</span></a></li>
+    <li class="flex-1"><a data-nav href="#/profile" class="flex flex-col items-center gap-1 py-2.5 tap text-slate-500"><span class="flex h-9 w-14 items-center justify-center rounded-full"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="text-[11px] font-semibold">Account</span></a></li>
+  </ul>
+</nav>
 
 <script>
-const qs=id=>document.getElementById(id);
-const money=v=>"Rs. "+Number(v||0).toLocaleString("en-IN");
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const AMBI={lat:23.1226,lng:83.1956};
-const distanceKm=(a,b)=>{
-  if(!a||!b||!Number.isFinite(Number(a.lat))||!Number.isFinite(Number(b.lat)))return null;
-  const R=6371,dLat=(Number(b.lat)-Number(a.lat))*Math.PI/180,dLng=(Number(b.lng)-Number(a.lng))*Math.PI/180;
-  const lat1=Number(a.lat)*Math.PI/180,lat2=Number(b.lat)*Math.PI/180;
-  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-  return Math.round(R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))*10)/10;
-};
+const SERVICES = [
+  { slug:"bike", name:"Bike Repair", tag:"At-home two-wheeler service", color:"#FCE7C3", from:249, rating:4.8, eta:"20 min" },
+  { slug:"ac", name:"AC Service", tag:"Cleaning, gas, installation", color:"#CFE7F5", from:399, rating:4.9, eta:"30 min" },
+  { slug:"plumbing", name:"Plumbing", tag:"Leaks, taps, drainage", color:"#CFEFEA", from:199, rating:4.7, eta:"25 min" },
+  { slug:"electrical", name:"Electrical", tag:"Wiring, switches, fans", color:"#FCEEB5", from:179, rating:4.8, eta:"25 min" },
+  { slug:"appliance", name:"Appliance", tag:"Fridge, washing machine", color:"#D9EFD5", from:299, rating:4.7, eta:"40 min" },
+  { slug:"carpentry", name:"Carpentry", tag:"Doors, furniture, hinges", color:"#FADFC1", from:249, rating:4.6, eta:"35 min" },
+  { slug:"phone", name:"Phone Repair", tag:"Screen, battery, pickup", color:"#E2D7F5", from:499, rating:4.7, eta:"45 min" },
+  { slug:"cleaning", name:"Deep Cleaning", tag:"Home & kitchen sparkle", color:"#DDEFCB", from:799, rating:4.9, eta:"60 min" },
+];
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
+const app = document.getElementById('app');
 
-let services=[],workers=[],settings={},selected="",currentWorker=null;
-let currentCustomer=JSON.parse(localStorage.fixitCustomer||"{}");
-let customerToken=localStorage.fixitCustomerToken||"";
-let pendingCustomerPhoto=null;
-let workerPhone=localStorage.fixitWorkerPhone||"";
-let workerToken=localStorage.fixitWorkerToken||"";
-let adminKey=localStorage.fixitAdminKey||"";
-let customerBookings=[],reviewBookingId=new URLSearchParams(location.search).get("review");
-let customerGeo=JSON.parse(localStorage.fixitCustomerGeo||"null");
-let bookingGeo=null,shareWatchId=null,trackTimer=null,trackMapObj=null,trackMarkers={};
-let workerMapObj=null,workerMapMarker=null,adminMapObj=null,adminMapMarkers={};
-
-async function api(p,o={}){let r=await fetch(p,o),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Something went wrong. Please try again.");return d}
-function headers(admin=false){let h={"Content-Type":"application/json"};if(admin)h["x-api-key"]=adminKey;return h}
-function custHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+customerToken}}
-function workHeaders(){return {"Content-Type":"application/json","Authorization":"Bearer "+workerToken}}
-function toast(m,kind){let t=qs("toast");t.textContent=m;t.className="toast show"+(kind?" "+kind:"");setTimeout(()=>t.classList.remove("show"),3200)}
-function errToast(m){toast(m,"error")}
-function okToast(m){toast(m,"success")}
-
-/* ---- field-level validation helpers ----
-   Every input lives inside a <div class="field">. setFieldError adds a red
-   outline + an inline message right under that field; clearFieldError removes
-   it once the value looks right, so people see exactly what to fix instead
-   of a request silently failing. */
-function setFieldError(id,msg){
-  let input=qs(id);if(!input)return false;
-  let wrap=input.closest(".field");
-  if(!wrap){errToast(msg);return false}
-  wrap.classList.add("invalid");wrap.classList.remove("valid");
-  let err=wrap.querySelector(".fieldError");
-  if(!err){err=document.createElement("div");err.className="fieldError";wrap.appendChild(err)}
-  err.textContent=msg;
-  return false;
-}
-function clearFieldError(id){
-  let input=qs(id);if(!input)return true;
-  let wrap=input.closest(".field");if(!wrap)return true;
-  wrap.classList.remove("invalid");wrap.classList.add("valid");
-  let err=wrap.querySelector(".fieldError");if(err)err.textContent="";
-  return true;
-}
-function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
-function requireText(id,label,min=2){
-  let v=(qs(id).value||"").trim();
-  if(v.length<min)return setFieldError(id,`Enter ${label.toLowerCase()}`+(min>1?` (at least ${min} characters)`:""));
-  return clearFieldError(id);
-}
-function requireEmailIfPresent(id){
-  let v=(qs(id).value||"").trim();
-  if(!v)return clearFieldError(id);
-  if(!isValidEmail(v))return setFieldError(id,"Enter a valid email address");
-  return clearFieldError(id);
-}
-function requirePhone10(id){
-  let v=(qs(id).value||"").replace(/\D/g,"");
-  if(v.length!==10)return setFieldError(id,"Enter a valid 10 digit phone number");
-  return clearFieldError(id);
-}
-function requireOtp6(id){
-  let v=(qs(id).value||"").trim();
-  if(!/^\d{6}$/.test(v))return setFieldError(id,"Enter the 6-digit code");
-  return clearFieldError(id);
-}
-function requireNumberMin(id,label,min){
-  let v=Number(qs(id).value);
-  if(!qs(id).value||!Number.isFinite(v)||v<min)return setFieldError(id,`Enter ${label} of at least ${min}`);
-  return clearFieldError(id);
-}
-/* Every button on this page calls an async function straight from onclick,
-   with no .catch() of its own. Without this, a rejected request (wrong OTP,
-   wrong admin key, duplicate booking, expired session, server validation
-   failure, etc.) fails completely silently — nothing appears on screen.
-   This is the single choke point that guarantees every such failure surfaces
-   to the person as a visible red toast instead of vanishing. */
-window.addEventListener("unhandledrejection",e=>{
-  errToast((e.reason&&e.reason.message)||"That didn't go through. Please check the details and try again.");
-  e.preventDefault();
-});
-
-function show(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  qs(id).classList.add("active");
-  ["Landing","Customer","Worker","Admin"].forEach(n=>{let t=qs("tab"+n);if(t)t.classList.toggle("active",n.toLowerCase()==id)});
-  if(id=="customer"){renderCustomerAuthState();loadCustomer();}
-  if(id=="worker"){renderWorkerAuthState();if(workerToken)workerDashboard();}
-  if(id=="admin"&&adminKey)loadAdmin();
-}
-
-async function boot(){
-  let d=await api("/api/bootstrap");
-  services=d.services;workers=d.workers;settings=d.settings;
-  qs("sync").textContent="Live";qs("syncDot").classList.add("live");
-  qs("mWorkers").textContent=workers.length;
-  qs("mOnline").textContent=workers.filter(w=>w.status=="Online").length;
-  renderServices();renderAreas();renderWorkers();renderPreview();
-  qs("rService").innerHTML=services.map(s=>`<option>${s}</option>`).join("");
-  fillCustomer();
-  if(reviewBookingId)openReview(reviewBookingId);
-}
-boot().catch(e=>errToast(e.message));
-
-function renderPreview(){
-  qs("workersPreview").innerHTML=workers.slice(0,3).map(w=>`<article class="card"><div class="row"><div><div class="name">${esc(w.service)} available</div><div class="meta">${esc(w.area)} area - ${money(w.charge)} base</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div></article>`).join("")||'<div class="empty">No workers yet.</div>';
-}
-function renderServices(){
-  qs("services").innerHTML=["",...services].map(s=>`<button class="chip ${selected==s?"active":""}" onclick="selected='${s}';renderServices();renderWorkers()"><span class="icon">${s?s.slice(0,2).toUpperCase():"ALL"}</span><b>${esc(s||"All services")}</b><div class="meta">${workers.filter(w=>!s||w.service==s).length} workers</div></button>`).join("");
-}
-function renderAreas(){qs("area").innerHTML='<option value="">All areas</option>'+[...new Set(workers.map(w=>w.area))].map(a=>`<option>${esc(a)}</option>`).join("")}
-function avatar(w){return w.photoUrl?`<img src="${esc(w.photoUrl)}">`:(w.service||"WK").slice(0,2).toUpperCase()}
-
-function renderWorkers(){
-  let q=(qs("search").value||"").toLowerCase(),area=qs("area").value;
-  const maxKm=Number(settings.maxServiceRadiusKm||50);
-  let list=workers.filter(w=>(!selected||w.service==selected)&&(!area||w.area==area)&&[w.service,w.area].join(" ").toLowerCase().includes(q));
-  if(customerGeo)list=list.map(w=>({...w,distanceKm:distanceKm(w,customerGeo)})).filter(w=>w.distanceKm===null||w.distanceKm<=maxKm);
-  qs("workerSub").textContent=customerGeo?`${list.length} service options within ${maxKm} km`:`${list.length} service options. Add location for ${maxKm} km filtering.`;
-  qs("workers").innerHTML=list.length?list.map(w=>{
-    let fee=Math.round(w.charge*(settings.commissionRate||.1)),total=w.charge+fee;
-    let dist=w.distanceKm==null?"Set location":`${w.distanceKm} km away`;
-    return `<article class="card worker"><div class="row"><div><div class="name">${esc(w.service)}</div><div class="meta">${esc(w.area)} area</div></div><span class="tag ${w.status=="Online"?"green":"amber"}">${esc(w.status)}</span></div><div class="tags"><span class="tag green">Verified</span><span class="tag blue">${esc(dist)}</span><span class="tag">Within ${maxKm} km radar</span></div><div class="exp">Book this profession. EPISKEVI assigns a verified nearby worker privately, like a ride booking.</div><div class="foot"><div><div class="price">${money(total)}</div><div class="meta">incl. platform fee</div></div><button class="btn primary" ${w.status!="Online"?"disabled":""} onclick="openBooking(${w.id})">Book worker</button></div></article>`;
-  }).join(""):'<div class="empty" style="grid-column:1/-1">No worker found.</div>';
-}
-
-function useCustomerLocation(){
-  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
-  qs("customerGeoNote").textContent="Reading your current location...";
-  navigator.geolocation.getCurrentPosition(pos=>{
-    customerGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    localStorage.fixitCustomerGeo=JSON.stringify(customerGeo);
-    qs("customerGeoNote").textContent=`Location ready. Showing workers inside ${settings.maxServiceRadiusKm||50} km.`;
-    renderWorkers();
-  },()=>{qs("customerGeoNote").textContent="Location permission denied. You can still book using the area centre.";errToast("Location permission denied")},{enableHighAccuracy:true,timeout:8000});
-}
-function fillCustomer(){
-  qs("cName").value=currentCustomer.name||"";qs("cPhone").value=currentCustomer.phone||"";
-  qs("cAddress").value=currentCustomer.address||"";qs("cCity").value=currentCustomer.city||"Ambikapur";
-  qs("cProfileName").value=currentCustomer.name||"";qs("cProfilePhone").value=currentCustomer.phone||"";
-  qs("cNotify").checked=currentCustomer.notification!==false;
-  pendingCustomerPhoto=null;
-  renderCustomerAvatar(currentCustomer.photoUrl,currentCustomer.name);
-}
-function renderCustomerAvatar(url,name){
-  let initial=(name||"C").trim().charAt(0).toUpperCase();
-  let el=qs("cPhotoPreview");
-  el.innerHTML=url?`<img src="${url}" alt="Profile photo">`:initial;
-  let bar=qs("custLoggedAvatar");
-  if(bar)bar.innerHTML=url?`<img src="${url}" alt="">`:initial;
-}
-async function previewCustomerPhoto(){
-  try{
-    let file=await fileData(qs("cPhotoInput"));
-    if(!file)return;
-    pendingCustomerPhoto=file;
-    qs("cPhotoPreview").innerHTML=`<img src="${file.dataUrl}" alt="Profile photo">`;
-  }catch(e){errToast(e.message||"Could not read that file")}
-}
-function custSection(id){document.querySelectorAll(".custSec").forEach(s=>s.style.display="none");qs(id).style.display="block"}
-function toggleCustMenu(){qs("custMenu").classList.toggle("open")}
-
-function renderCustomerAuthState(){
-  let loggedIn=Boolean(customerToken&&currentCustomer.phone);
-  qs("custLoginArea").style.display=loggedIn?"none":"block";
-  qs("custLoggedInBar").style.display=loggedIn?"flex":"none";
-  if(loggedIn){qs("custLoggedName").textContent=currentCustomer.name||"Customer";qs("custLoggedPhone").textContent=currentCustomer.phone;}
-}
-async function sendCustomerOtp(){
-  let phoneOk=requirePhone10("cPhone"),emailOk=requireEmailIfPresent("cEmail");
-  if(!phoneOk||!emailOk){errToast("Please fix the highlighted field(s)");return}
-  let phone=qs("cPhone").value.replace(/\D/g,"");
-  let email=qs("cEmail").value.trim();
-  let d=await api("/api/customer/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({phone,email})});
-  qs("custOtpBox").style.display="block";
-  toast(d.devOtp?("Dev mode - your code is "+d.devOtp):d.message);
-}
-async function verifyCustomerOtp(){
-  let nameOk=requireText("cName","your name"),otpOk=requireOtp6("cOtp");
-  if(!nameOk||!otpOk){errToast("Please fix the highlighted field(s)");return}
-  let phone=qs("cPhone").value.replace(/\D/g,""),name=qs("cName").value,otp=qs("cOtp").value.trim();
-  let d=await api("/api/customer/otp/verify",{method:"POST",headers:headers(),body:JSON.stringify({phone,otp,name})});
-  customerToken=d.token;localStorage.fixitCustomerToken=customerToken;
-  currentCustomer=d.customer;localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-  qs("cOtp").value="";qs("custOtpBox").style.display="none";
-  fillCustomer();renderCustomerAuthState();okToast("Phone verified");loadCustomer();
-}
-function customerLogout(){
-  customerToken="";currentCustomer={};
-  delete localStorage.fixitCustomerToken;delete localStorage.fixitCustomer;
-  qs("custBookings").innerHTML='<div class="empty">Login to see bookings.</div>';
-  fillCustomer();renderCustomerAuthState();toast("Logged out");
-}
-async function saveCustomerProfile(){
-  if(!customerToken){errToast("Verify your phone first");return}
-  let c={name:qs("cProfileName").value||qs("cName").value,address:qs("cAddress").value,city:qs("cCity").value,notification:qs("cNotify").checked};
-  if(pendingCustomerPhoto)c.photo=pendingCustomerPhoto;
-  let d=await api("/api/customer/profile",{method:"POST",headers:custHeaders(),body:JSON.stringify(c)});
-  currentCustomer=d.customer;localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-  pendingCustomerPhoto=null;
-  fillCustomer();okToast("Profile saved");
-}
-
-async function loadCustomer(){
-  fillCustomer();
-  if(!customerToken||!currentCustomer.phone){qs("custBookings").innerHTML='<div class="empty">Verify your phone to see bookings.</div>';return}
-  let d=await api("/api/customer/bookings",{headers:custHeaders()});
-  customerBookings=d.bookings;qs("mBookings").textContent=d.bookings.length;
-  qs("custBookings").innerHTML=bookingCards(d.bookings,true);
-}
-
-function bookingCards(list){
-  if(!list.length)return'<div class="empty">No bookings yet.</div>';
-  const trackable=["accepted","on_the_way","requested"];
-  return [...list].reverse().map(b=>`<article class="card"><div class="row"><div><div class="name">${esc(b.service)} booking</div><div class="meta">${esc(b.customerAddress||"")} - ${esc(b.time||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${esc(b.paymentMethod)} / ${esc(b.paymentStatus)}</span></div></div><b>${money(b.total)}</b></div><div class="row" style="margin-top:10px">${trackable.includes(b.status)?`<button class="btn amberBtn" onclick="openTrack(${b.id})">Track live</button>`:""}${b.status=="completed"?`<button class="btn primary" onclick="openReview(${b.id})">Review</button>`:""}</div></article>`).join("");
-}
-/* ---- booking modal ---- */
-function openBooking(id){
-  if(!customerToken){errToast("Verify your phone number first to book a worker");show("customer");custSection("custBrowse");return}
-  currentWorker=workers.find(w=>w.id==id);
-  let fee=Math.round(currentWorker.charge*(settings.commissionRate||.1)),total=currentWorker.charge+fee;
-  qs("bName").value=currentCustomer.name||"";qs("bPhone").value=currentCustomer.phone||"";qs("bAddress").value=currentCustomer.address||"";
-  qs("bookWorker").innerHTML=`<div><div class="name">${esc(currentWorker.service)}</div><div class="meta">${esc(currentWorker.area)} area - verified nearby worker assigned privately</div></div>`;
-  qs("sBase").textContent=money(currentWorker.charge);qs("sFee").textContent=money(fee);qs("sTotal").textContent=money(total);
-  qs("rzpBtn").disabled=!settings.razorpayEnabled;
-  bookingGeo=customerGeo;
-  qs("geoNote").textContent=bookingGeo?`Customer location ready. Worker must be within ${settings.maxServiceRadiusKm||50} km to accept.`:"Locating you so your worker can find you...";
-  if(!bookingGeo&&navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      pos=>{bookingGeo={lat:pos.coords.latitude,lng:pos.coords.longitude};customerGeo=bookingGeo;localStorage.fixitCustomerGeo=JSON.stringify(customerGeo);qs("geoNote").textContent="Your location is ready for live tracking and 50 km matching.";renderWorkers();},
-      ()=>{qs("geoNote").textContent="Location permission denied - tracking will use the city centre.";},
-      {enableHighAccuracy:true,timeout:6000}
-    );
-  } else if(!navigator.geolocation) {
-    qs("geoNote").textContent="This browser can't share location - tracking will use the city centre.";
-  }
-  qs("bookingModal").classList.add("open");
-}function closeModal(){qs("bookingModal").classList.remove("open")}
-function customerFromModal(){return{name:qs("bName").value,phone:qs("bPhone").value,address:qs("bAddress").value,city:qs("cCity").value,note:qs("bNote").value,lat:bookingGeo?bookingGeo.lat:AMBI.lat,lng:bookingGeo?bookingGeo.lng:AMBI.lng}}
-
-function validateBookingForm(){
-  let nameOk=requireText("bName","your name"),addrOk=requireText("bAddress","your address",6),cityOk=requireText("cCity","your city");
-  return nameOk&&addrOk&&cityOk;
-}
-async function book(method){
-  if(!validateBookingForm()){errToast("Please fix the highlighted field(s)");return}
-  let d=await api("/api/bookings",{method:"POST",headers:custHeaders(),body:JSON.stringify({workerId:currentWorker.id,customer:customerFromModal(),paymentMethod:method})});
-  closeModal();
-  currentCustomer={name:d.booking.customerName,phone:d.booking.customerPhone,address:d.booking.customerAddress,city:d.booking.customerCity};
-  localStorage.fixitCustomer=JSON.stringify(currentCustomer);
-  okToast("Booking sent to worker");
-  show("customer");custSection("custHome");
-}
-
-async function payRazorpay(){
-  if(!validateBookingForm()){errToast("Please fix the highlighted field(s) before paying");return}
-  let total=currentWorker.charge+Math.round(currentWorker.charge*(settings.commissionRate||.1));
-  let o=await api("/api/create-order",{method:"POST",headers:custHeaders(),body:JSON.stringify({amount:total*100,receipt:"fixit_"+Date.now()})});
-  new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:settings.merchantName||"EPISKEVI",description:currentWorker.service+" booking",
-    handler:async r=>{await api("/api/verify-payment",{method:"POST",headers:custHeaders(),body:JSON.stringify(r)});await book("razorpay")},
-    modal:{ondismiss:()=>errToast("Payment cancelled")}}).open();
-}
-
-/* ---- live tracking (customer side) ---- */
-function pinDivIcon(cls,glyph){return L.divIcon({className:"",html:`<div class="${cls}"><span>${glyph}</span></div>`,iconSize:[30,30],iconAnchor:[15,15]})}
-
-function openTrack(bookingId){
-  qs("trackModal").classList.add("open");
-  if(!trackMapObj){
-    trackMapObj=L.map("trackMap");
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(trackMapObj);
-  }
-  setTimeout(()=>trackMapObj.invalidateSize(),80);
-  pollTrack(bookingId);
-  clearInterval(trackTimer);
-  trackTimer=setInterval(()=>pollTrack(bookingId),5000);
-}
-function closeTrack(){qs("trackModal").classList.remove("open");clearInterval(trackTimer)}
-
-async function pollTrack(bookingId){
-  try{
-    let d=await api(`/api/bookings/${bookingId}/track`);
-    qs("trackWho").textContent=`${d.service} booking`;
-    qs("trackStatus").textContent=d.status.replace(/_/g," ");
-    qs("trackDist").textContent=d.distanceKm ?? "-";
-    qs("trackEta").textContent=d.etaMinutes ?? "-";
-    qs("trackCall").href="tel:"+(d.workerPhone||"");
-    let wl=d.workerLocation||AMBI, cl=d.customerLocation||AMBI;
-    if(!trackMarkers.worker){
-      trackMarkers.worker=L.marker([wl.lat,wl.lng],{icon:pinDivIcon("vanIcon","🔧")}).addTo(trackMapObj);
-      trackMarkers.cust=L.marker([cl.lat,cl.lng],{icon:pinDivIcon("pinIcon","🏠")}).addTo(trackMapObj);
-      trackMarkers.line=L.polyline([[wl.lat,wl.lng],[cl.lat,cl.lng]],{color:"#f2a71b",weight:3,dashArray:"6 8"}).addTo(trackMapObj);
-      trackMapObj.fitBounds(trackMarkers.line.getBounds(),{padding:[36,36]});
-    } else {
-      trackMarkers.worker.setLatLng([wl.lat,wl.lng]);
-      trackMarkers.cust.setLatLng([cl.lat,cl.lng]);
-      trackMarkers.line.setLatLngs([[wl.lat,wl.lng],[cl.lat,cl.lng]]);
-    }
-  }catch(e){ /* booking may have closed; keep last known view */ }
-}
-
-/* ---- worker desk ---- */
-async function fileData(input){
-  let f=input.files[0];if(!f)return null;
-  if(f.size>2500000)throw Error("File under 2.5 MB only");
-  return await new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res({name:f.name,type:f.type,dataUrl:r.result});r.onerror=()=>rej(Error("File read failed"));r.readAsDataURL(f)});
-}
-function renderWorkerAuthState(){
-  let loggedIn=Boolean(workerToken&&workerPhone);
-  qs("workerLoginArea").style.display=loggedIn?"none":"block";
-  qs("workerLoggedInBar").style.display=loggedIn?"flex":"none";
-  if(loggedIn)qs("workerLoggedPhone").textContent=workerPhone;
-}
-async function sendWorkerOtp(){
-  let phoneOk=requirePhone10("wLoginPhone"),emailOk=requireEmailIfPresent("wEmail");
-  if(!phoneOk||!emailOk){errToast("Please fix the highlighted field(s)");return}
-  let phone=qs("wLoginPhone").value.replace(/\D/g,"");
-  let email=qs("wEmail").value.trim();
-  let d=await api("/api/worker/otp/request",{method:"POST",headers:headers(),body:JSON.stringify({phone,email})});
-  qs("workerOtpBox").style.display="block";
-  toast(d.devOtp?("Dev mode - your code is "+d.devOtp):d.message);
-}
-async function verifyWorkerOtp(){
-  let otpOk=requireOtp6("wOtp");
-  if(!otpOk){errToast("Enter the 6-digit code");return}
-  let phone=qs("wLoginPhone").value.replace(/\D/g,""),otp=qs("wOtp").value.trim();
-  let d=await api("/api/worker/otp/verify",{method:"POST",headers:headers(),body:JSON.stringify({phone,otp})});
-  workerToken=d.token;workerPhone=phone;
-  localStorage.fixitWorkerToken=workerToken;localStorage.fixitWorkerPhone=workerPhone;
-  qs("wOtp").value="";qs("workerOtpBox").style.display="none";
-  renderWorkerAuthState();okToast("Phone verified");workerDashboard();
-}
-async function workerRegister(){
-  if(!workerToken){errToast("Verify your phone first");return}
-  let nameOk=requireText("rName","your name"),areaOk=requireText("rArea","your area"),
-      chargeOk=requireNumberMin("rCharge","a price",50),expOk=requireText("rExp","your experience",10);
-  let serviceOk=clearFieldError("rService");
-  if(!qs("rService").value){serviceOk=setFieldError("rService","Choose a service")}
-  let photoOk=clearFieldError("rPhoto"),idOk=clearFieldError("rId");
-  if(!qs("rPhoto").files[0]){photoOk=setFieldError("rPhoto","Upload a photo of yourself")}
-  if(!qs("rId").files[0]){idOk=setFieldError("rId","Upload an ID proof document")}
-  if(!(nameOk&&areaOk&&chargeOk&&expOk&&serviceOk&&photoOk&&idOk)){errToast("Please fix the highlighted field(s)");return}
-  let payload={name:qs("rName").value,service:qs("rService").value,area:qs("rArea").value,charge:qs("rCharge").value,exp:qs("rExp").value,photo:await fileData(qs("rPhoto")),idProof:await fileData(qs("rId"))};
-  let d=await api("/api/worker/register",{method:"POST",headers:workHeaders(),body:JSON.stringify(payload)});
-  okToast("Submitted. Admin verification pending.");workerDashboard();
-}
-async function workerDashboard(){
-  if(!workerToken)return;
-  let d=await api("/api/worker/dashboard",{headers:workHeaders()});
-  let w=d.worker||d.application||{};
-  qs("workerRegisterArea").style.display=(!d.worker&&!d.application)?"block":"none";
-  qs("wJobs").textContent=d.bookings.length;
-  qs("wEarn").textContent=money(d.bookings.filter(b=>b.status=="completed").reduce((s,b)=>s+b.base,0));
-  qs("wRating").textContent=w.rating||"-";qs("wStatus").textContent=w.verificationStatus||w.status||"-";
-  qs("workerProfile").innerHTML=d.worker?`<div class="row"><div><div class="name">${esc(w.name)}</div><div class="meta">${esc(w.service)} - ${esc(w.area)} - ${esc(w.phone)}</div></div><select id="wStatusSelect"><option>${esc(w.status)}</option><option>Online</option><option>Offline</option><option>Busy</option></select></div>`:`<div class="empty">Verification ${esc(w.verificationStatus||"not started")}</div>`;
-  qs("workerTools").style.display=d.worker?"block":"none";
-  if(d.worker){
-    qs("workerTools").innerHTML=`<div class="grid3"><div class="field"><label>Price</label><input id="wCharge" type="number" min="50" value="${esc(w.charge)}"></div><div class="field"><label>Location area</label><input id="wArea" value="${esc(w.area)}"></div><div class="field"><label>Service status</label><button class="btn primary" style="width:100%;margin-top:22px" onclick="saveWorkerProfile()">Save changes</button></div></div><div class="row"><button class="btn soft" onclick="useWorkerLocation()">Update current location</button><button class="btn danger" onclick="workerLogout()">Logout</button></div><div class="meta" style="margin-top:8px">Keep price, area, and live location correct so only nearby customers can book and the 50 km accept check passes.</div>`;
-  }
-  qs("workerSteps").innerHTML=stepsHtml(w);
-  qs("workerBookings").innerHTML=workerBookingHtml(d.bookings);
-  if(d.worker)drawWorkerMap(d.worker.lat,d.worker.lng);
-}function stepsHtml(w){let verified=w.verificationStatus=="verified";return["Personal details","Documents uploaded","Admin verification","Dashboard active"].map((s,i)=>`<div class="card row"><b>${s}</b><span class="tag ${i<2||verified?"green":"amber"}">${i<2||verified?"Done":"Pending"}</span></div>`).join("")}
-async function updateWorkerStatus(status){await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({status})});workerDashboard();boot()}
-async function saveWorkerProfile(){
-  let chargeOk=requireNumberMin("wCharge","a price",50),areaOk=requireText("wArea","your area");
-  if(!(chargeOk&&areaOk)){errToast("Please fix the highlighted field(s)");return}
-  await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({status:qs("wStatusSelect").value,charge:qs("wCharge").value,area:qs("wArea").value})});
-  okToast("Worker profile updated");workerDashboard();boot();
-}
-function useWorkerLocation(){
-  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
-  if(!workerToken){errToast("Login as a worker first");return}
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude})});
-    drawWorkerMap(pos.coords.latitude,pos.coords.longitude);okToast("Worker location updated");boot();
-  },()=>errToast("Could not read your location"),{enableHighAccuracy:true,timeout:8000});
-}
-function workerLogout(){
-  if(shareWatchId){navigator.geolocation.clearWatch(shareWatchId);shareWatchId=null}
-  workerPhone="";workerToken="";delete localStorage.fixitWorkerPhone;delete localStorage.fixitWorkerToken;
-  qs("wLoginPhone").value="";qs("workerProfile").innerHTML='<div class="empty">Login to open your worker dashboard.</div>';qs("workerTools").style.display="none";qs("workerSteps").innerHTML="";qs("workerBookings").innerHTML='<div class="empty">No incoming bookings.</div>';
-  qs("wJobs").textContent="0";qs("wEarn").textContent=money(0);qs("wRating").textContent="-";qs("wStatus").textContent="-";renderWorkerAuthState();toast("Worker logged out");
-}function workerBookingHtml(list){
-  if(!list.length)return'<div class="empty">No incoming bookings.</div>';
-  const maxKm=Number(settings.maxServiceRadiusKm||50);
-  return [...list].reverse().map(b=>{
-    const dist=distanceKm(b.workerLocation,b.customerLocation);
-    const over=dist!==null&&dist>maxKm;
-    return `<article class="card"><div class="row"><div><div class="name">${esc(b.customerName)} - ${esc(b.service)}</div><div class="meta">${esc(b.customerAddress)} - ${esc(b.note||"")}</div><div class="tags"><span class="tag blue">${esc(b.status)}</span><span class="tag">${money(b.total)}</span><span class="tag ${over?"danger":"green"}">${dist===null?"Location pending":dist+" km from customer"}</span></div></div><a class="btn soft" href="tel:${esc(b.customerPhone)}">Call</a></div><div class="row" style="margin-top:10px"><button class="btn primary" ${over?"disabled":""} onclick="bookingAction(${b.id},'accept')">Accept</button><button class="btn dark" onclick="bookingAction(${b.id},'start')">On way</button><button class="btn warn" onclick="bookingAction(${b.id},'complete')">Done</button><button class="btn danger" onclick="bookingAction(${b.id},'cancel')">Cancel</button></div></article>`;
-  }).join("");
-}async function bookingAction(id,act){
-  let d=await api(`/api/bookings/${id}/${act}`,{method:"POST",headers:workHeaders()});
-  if(act=="complete"&&d.whatsappReviewLink)window.open(d.whatsappReviewLink,"_blank");
-  toast(act=="complete"?"Completed. WhatsApp review link opened.":"Booking updated");
-  workerDashboard();boot();
-}
-
-/* ---- worker live location sharing ---- */
-function toggleShareLocation(){
-  if(shareWatchId){
-    navigator.geolocation.clearWatch(shareWatchId);shareWatchId=null;
-    qs("shareToggle").classList.remove("on");qs("shareDot").classList.remove("live");qs("shareLabel").textContent="Live location off";
-    return;
-  }
-  if(!navigator.geolocation){errToast("Geolocation not supported on this device");return}
-  if(!workerToken){errToast("Login as a worker first");return}
-  qs("shareToggle").classList.add("on");qs("shareDot").classList.add("live");qs("shareLabel").textContent="Sharing live location";
-  let last=0;
-  shareWatchId=navigator.geolocation.watchPosition(async pos=>{
-    let now=Date.now();if(now-last<4000)return;last=now;
-    try{
-      await api("/api/worker/profile",{method:"PATCH",headers:workHeaders(),body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude})});
-      drawWorkerMap(pos.coords.latitude,pos.coords.longitude);
-    }catch(e){}
-  },()=>errToast("Could not read your location"),{enableHighAccuracy:true,maximumAge:5000});
-}
-function drawWorkerMap(lat,lng){
-  if(lat==null||lng==null)return;
-  if(!workerMapObj){
-    workerMapObj=L.map("workerMap",{zoomControl:false,attributionControl:false});
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19}).addTo(workerMapObj);
-    workerMapObj.setView([lat,lng],14);
-  }
-  setTimeout(()=>workerMapObj.invalidateSize(),80);
-  if(!workerMapMarker){workerMapMarker=L.marker([lat,lng],{icon:pinDivIcon("vanIcon","🔧")}).addTo(workerMapObj)}
-  else workerMapMarker.setLatLng([lat,lng]);
-  workerMapObj.panTo([lat,lng]);
-}
-
-/* ---- customer help chat ---- */
-async function sendHelp(){
-  if(!customerToken){errToast("Verify your phone first to chat with support");return}
-  let msg=qs("chatInput").value.trim();if(!msg){errToast("Type a message first");return}
-  qs("chatBox").innerHTML+=`<div class="chatMsg me">${esc(msg)}</div>`;
-  let d=await api("/api/help/chat",{method:"POST",headers:custHeaders(),body:JSON.stringify({message:msg})});
-  qs("chatBox").innerHTML+=`<div class="chatMsg">${esc(d.reply)}</div>`;
-  qs("chatInput").value="";qs("chatBox").scrollTop=qs("chatBox").scrollHeight;
-}
-
-/* ---- admin ---- */
-async function adminLogin(){
-  if(!requireText("adminKey","the admin API key",4)){errToast("Enter the admin API key");return}
-  adminKey=qs("adminKey").value;localStorage.fixitAdminKey=adminKey;
-  await api("/api/admin/login",{method:"POST",headers:headers(true),body:"{}"});
-  clearFieldError("adminKey");
-  loadAdmin();
-}
-async function loadAdmin(){
-  let d=await api("/api/admin/dashboard",{headers:headers(true)});
-  qs("adminLogin").style.display="none";qs("adminDash").style.display="block";
-  qs("aCustomers").textContent=d.customers.length;qs("aWorkers").textContent=d.workers.length;
-  qs("aPending").textContent=d.workerApplications.filter(a=>a.verificationStatus=="pending").length;
-  qs("aBookings").textContent=d.bookings.length;
-  qs("adminApps").innerHTML=d.workerApplications.length?d.workerApplications.map(a=>`<div class="card row"><div><div class="name">${esc(a.name)}</div><div class="meta">${esc(a.service)} · ${esc(a.phone)} · ${esc(a.verificationStatus)}</div><a href="${esc(a.idUrl)}" target="_blank">View ID</a></div>${a.verificationStatus=="pending"?`<div><button class="btn primary" onclick="reviewApp(${a.id},'verify')">Verify</button> <button class="btn danger" onclick="reviewApp(${a.id},'reject')">Reject</button></div>`:""}</div>`).join(""):'<div class="empty">No applications</div>';
-  qs("adminBookings").innerHTML=bookingCards(d.bookings);
-  drawAdminMap(d.workers);
-}
-async function reviewApp(id,action){
-  await api(`/api/admin/worker-applications/${id}/${action}`,{method:"POST",headers:headers(true),body:JSON.stringify({reason:"Documents not clear"})});
-  okToast("Application updated");loadAdmin();boot();
-}
-function drawAdminMap(list){
-  if(!adminMapObj){
-    adminMapObj=L.map("adminMap").setView([AMBI.lat,AMBI.lng],12);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"&copy; OpenStreetMap &copy; CARTO",subdomains:"abcd",maxZoom:19}).addTo(adminMapObj);
-  }
-  setTimeout(()=>adminMapObj.invalidateSize(),80);
-  let seen=new Set();
-  list.forEach(w=>{
-    if(w.lat==null||w.lng==null)return;
-    seen.add(w.id);
-    let cls=w.status=="Online"?"green":w.status=="Busy"?"amber":"grey";
-    let color=w.status=="Online"?"#0f7a6c":w.status=="Busy"?"#f2a71b":"#9aa4ad";
-    let html=`<div style="background:${color};color:#fff;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800">${esc((w.name||"?").slice(0,1))}</div>`;
-    let icon=L.divIcon({className:"",html,iconSize:[28,28],iconAnchor:[14,14]});
-    if(adminMapMarkers[w.id]){adminMapMarkers[w.id].setLatLng([w.lat,w.lng]).setIcon(icon)}
-    else{
-      adminMapMarkers[w.id]=L.marker([w.lat,w.lng],{icon}).addTo(adminMapObj).bindPopup(`<b>${esc(w.name)}</b><br>${esc(w.service)} · ${esc(w.status)}`);
-    }
+function Home(){
+  app.innerHTML = `
+  <section class="fade-in relative overflow-hidden rounded-3xl bg-brand p-6 shadow-pop">
+    <p class="text-xs font-bold uppercase tracking-widest opacity-70">FixIt · Rapid Repairs</p>
+    <h1 class="mt-2 text-3xl font-extrabold leading-tight sm:text-4xl">Book a pro.<br/>Track them live.</h1>
+    <p class="mt-2 max-w-sm text-sm opacity-80">Verified technicians at your door in 30 minutes.</p>
+    <div class="mt-5 flex items-center gap-2 rounded-full bg-white px-4 py-3 shadow-soft">
+      <svg class="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input placeholder="Search services · e.g. AC gas refill" class="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"/>
+      <button class="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-brand tap">Go</button>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2 text-xs">
+      <span class="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 font-semibold">✓ Verified pros</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 font-semibold">⏱ 30‑min ETA</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-black/10 px-3 py-1 font-semibold">★ 4.9 rated</span>
+    </div>
+  </section>
+  <section class="mt-8 fade-in">
+    <div class="flex items-end justify-between"><h2 class="text-xl font-bold">What needs fixing?</h2><a href="#/offers" class="text-xs font-semibold text-slate-500">See offers →</a></div>
+    <div id="grid" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"></div>
+  </section>`;
+  const grid = document.getElementById('grid');
+  SERVICES.forEach(s => {
+    grid.appendChild(el(`
+      <a href="#/book?service=${s.slug}" class="card tap flex h-full flex-col gap-3 p-4 hover:-translate-y-0.5 hover:shadow-pop">
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl" style="background:${s.color}">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/></svg>
+        </span>
+        <div><p class="font-semibold leading-tight">${s.name}</p><p class="text-xs text-slate-500">${s.tag}</p></div>
+        <div class="mt-auto flex items-center justify-between text-xs"><span class="font-semibold">From ₹${s.from}</span><span class="text-slate-500">★ ${s.rating}</span></div>
+      </a>`));
   });
-  Object.keys(adminMapMarkers).forEach(id=>{if(!seen.has(Number(id))){adminMapObj.removeLayer(adminMapMarkers[id]);delete adminMapMarkers[id]}});
 }
 
-/* ---- reviews ---- */
-function openReview(id){reviewBookingId=id;qs("reviewModal").classList.add("open")}
-function closeReview(){qs("reviewModal").classList.remove("open")}
-async function submitReview(){
-  if(!customerToken){errToast("Verify your phone first to leave a review");return}
-  let tags=[...document.querySelectorAll('#reviewModal input[type=checkbox]:checked')].map(x=>x.value);
-  await api("/api/reviews",{method:"POST",headers:custHeaders(),body:JSON.stringify({bookingId:reviewBookingId,rating:qs("revStars").value,tags,comment:qs("revComment").value})});
-  okToast("Review submitted");closeReview();
+function Book(){
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const slug = q.get('service') || 'bike';
+  const s = SERVICES.find(x => x.slug === slug);
+  app.innerHTML = `
+  <div class="fade-in mx-auto max-w-2xl">
+    <a href="#/" class="text-sm text-slate-500">← Back</a>
+    <div class="mt-3 rounded-3xl p-5" style="background:${s.color}">
+      <h1 class="text-2xl font-extrabold">${s.name}</h1>
+      <p class="text-sm opacity-80">${s.tag}</p>
+      <p class="mt-1 text-xs font-semibold">★ ${s.rating} · ⏱ ${s.eta} · 🛡 Warranty</p>
+    </div>
+    <div class="card mt-5 p-4">
+      <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Address</label>
+      <textarea rows="3" class="mt-2 w-full rounded-2xl border border-black/10 bg-white p-3 outline-none">221B MG Road, Bengaluru, 560001</textarea>
+    </div>
+    <div class="card mt-3 p-4">
+      <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Slot</label>
+      <div class="mt-2 flex flex-wrap gap-2">
+        ${["Now (30 min)","In 1 hour","Today 5–6 PM","Tomorrow 10 AM"].map((t,i) => `<button class="rounded-full border px-3 py-1.5 text-sm tap ${i===0?'border-brand bg-brand':'border-black/10 bg-white'}">${t}</button>`).join('')}
+      </div>
+    </div>
+    <div class="sticky bottom-24 mt-6 flex items-center justify-between rounded-2xl bg-primary p-3 text-brand shadow-pop">
+      <div class="pl-3"><p class="text-xs opacity-70">Total</p><p class="text-lg font-bold">₹${s.from + 50}</p></div>
+      <button onclick="location.hash='#/track'" class="rounded-full bg-brand px-6 py-3 text-sm font-bold text-primary tap">Confirm booking</button>
+    </div>
+  </div>`;
 }
+
+function Track(){
+  app.innerHTML = `
+  <div class="fade-in mx-auto max-w-2xl">
+    <div class="relative h-[60vh] overflow-hidden rounded-3xl border border-black/10 bg-[#f6efe0]">
+      <div id="gmap" class="h-full w-full"></div>
+      <div class="pointer-events-none absolute inset-x-0 top-3 flex items-center justify-center">
+        <span class="rounded-full bg-white px-4 py-2 text-xs font-bold shadow-soft"><span class="mr-2 inline-block h-2 w-2 rounded-full bg-success animate-pulse align-middle"></span>Technician on the way</span>
+      </div>
+    </div>
+    <div class="card sheet mt-4 p-4">
+      <div class="flex items-center justify-between">
+        <div><p class="text-xs font-bold uppercase tracking-wider text-slate-500">ETA</p><p class="font-display text-3xl font-extrabold">18 min</p></div>
+        <div class="text-right"><p class="text-xs text-slate-500">Booking</p><p class="font-mono text-sm font-bold">FX2K91</p></div>
+      </div>
+      <div class="mt-4 flex items-center gap-3 rounded-2xl border border-black/10 bg-white p-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand font-bold">RK</div>
+        <div class="flex-1"><p class="font-semibold leading-tight">Ramesh K.</p><p class="text-xs text-slate-500">Hero Splendor · KA 05 AB 1234</p></div>
+        <a href="tel:+911800000000" class="flex h-11 w-11 items-center justify-center rounded-full bg-success text-white tap">📞</a>
+        <button class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-brand tap">💬</button>
+      </div>
+      <div class="mt-3 grid grid-cols-3 gap-2">
+        <button class="rounded-xl border border-black/10 bg-white p-2.5 text-xs font-semibold tap">Directions</button>
+        <button class="rounded-xl border border-danger/40 bg-danger/10 p-2.5 text-xs font-bold text-danger tap">SOS</button>
+        <button onclick="location.hash='#/bookings'" class="rounded-xl border border-black/10 bg-white p-2.5 text-xs font-semibold tap">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+  loadMap();
+}
+
+function Bookings(){
+  app.innerHTML = `<div class="fade-in mx-auto max-w-3xl"><h1 class="text-2xl font-extrabold">Your bookings</h1>
+    <div class="card mt-4 flex items-center gap-3 p-4"><div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand">🛵</div>
+      <div class="flex-1"><p class="font-semibold">Bike Repair · Basic Checkup</p><p class="text-xs text-slate-500">Assigned · FX2K91</p></div>
+      <a href="#/track" class="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-brand tap">Track</a></div></div>`;
+}
+function Offers(){ app.innerHTML = `<div class="fade-in mx-auto max-w-3xl"><h1 class="text-2xl font-extrabold">Offers</h1>
+  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+    <div class="card p-4"><p class="font-semibold">Flat 20% off first booking</p><p class="text-xs text-slate-500 mt-1">Code: <b class="font-mono">FIXIT20</b></p></div>
+    <div class="card p-4"><p class="font-semibold">AC deep clean at ₹299</p><p class="text-xs text-slate-500 mt-1">Code: <b class="font-mono">AC299</b></p></div>
+  </div></div>`; }
+function Profile(){ app.innerHTML = `<div class="fade-in mx-auto max-w-2xl">
+  <div class="card flex items-center gap-4 p-5"><div class="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-2xl">👤</div>
+    <div class="flex-1"><p class="font-display text-xl font-bold">Guest User</p><p class="text-sm text-slate-500">+91 98765 43210</p></div></div>
+  <div class="card mt-5 overflow-hidden"><a class="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 tap" href="#/">📍 Saved addresses</a>
+    <a class="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 tap" href="#/">💳 Payment methods</a>
+    <a class="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 tap" href="#/offers">🎁 Offers & referrals</a>
+    <a class="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 tap" href="#/">⚙️ Settings</a>
+    <a class="flex items-center gap-3 px-4 py-3.5 tap" href="#/">❓ Help & support</a></div></div>`; }
+
+// Google Maps loader (uses server-provided key)
+function loadMap(){
+  const key = window.__FIXIT_MAPS_KEY__;
+  if (!key) { document.getElementById('gmap').innerHTML = '<div class="grid h-full place-items-center text-sm text-slate-500">Set GOOGLE_MAPS_BROWSER_KEY on the server to enable live map.</div>'; return; }
+  if (window.google?.maps) return renderMap();
+  window.__initMap = renderMap;
+  const s = document.createElement('script');
+  s.async = true; s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initMap&libraries=geometry`;
+  document.head.appendChild(s);
+}
+function renderMap(){
+  const g = window.google;
+  const origin = { lat: 12.9756, lng: 77.5813 }, dest = { lat: 12.9716, lng: 77.5946 };
+  const map = new g.maps.Map(document.getElementById('gmap'), { center: origin, zoom: 14, disableDefaultUI: true, styles: [
+    { elementType:'geometry', stylers:[{color:'#f6efe0'}] }, { featureType:'poi', stylers:[{visibility:'off'}] },
+    { featureType:'road', elementType:'geometry', stylers:[{color:'#ffffff'}] },
+    { featureType:'road.highway', elementType:'geometry', stylers:[{color:'#ffe58a'}] },
+    { featureType:'water', elementType:'geometry', stylers:[{color:'#b6d8e0'}] }
+  ]});
+  const bounds = new g.maps.LatLngBounds(); bounds.extend(origin); bounds.extend(dest); map.fitBounds(bounds, 80);
+  const path=[origin]; for(let i=1;i<24;i++){const t=i/24;path.push({lat:origin.lat+(dest.lat-origin.lat)*t+Math.sin(t*Math.PI)*.004,lng:origin.lng+(dest.lng-origin.lng)*t+Math.cos(t*Math.PI)*.003});} path.push(dest);
+  new g.maps.Polyline({ path, map, strokeColor:'#0B0B0F', strokeOpacity:.15, strokeWeight:8 });
+  new g.maps.Polyline({ path, map, strokeColor:'#FDD835', strokeOpacity:1, strokeWeight:5 });
+  new g.maps.Marker({ position: dest, map, icon: { path: g.maps.SymbolPath.CIRCLE, scale:8, fillColor:'#0B0B0F', fillOpacity:1, strokeColor:'#FDD835', strokeWeight:3 } });
+  const tech = new g.maps.Marker({ position: origin, map, icon: { path: g.maps.SymbolPath.CIRCLE, scale:9, fillColor:'#FDD835', fillOpacity:1, strokeColor:'#0B0B0F', strokeWeight:3 } });
+  let i=0; setInterval(()=>{ i=(i+.5)%path.length; const idx=Math.floor(i), f=i-idx; const a=path[idx], b=path[Math.min(idx+1,path.length-1)]; tech.setPosition({lat:a.lat+(b.lat-a.lat)*f,lng:a.lng+(b.lng-a.lng)*f}); }, 140);
+}
+
+const routes = { '': Home, '/': Home, '/book': Book, '/track': Track, '/bookings': Bookings, '/offers': Offers, '/profile': Profile };
+function route(){ const p = (location.hash.replace(/^#/,'').split('?')[0]) || '/'; (routes[p] || Home)(); document.querySelectorAll('[data-nav]').forEach(a=>{ const active = a.getAttribute('href') === '#'+p; a.querySelector('span:first-child').className = 'flex h-9 w-14 items-center justify-center rounded-full' + (active?' bg-brand':''); a.className = 'flex flex-col items-center gap-1 py-2.5 tap' + (active?'':' text-slate-500'); }); window.scrollTo(0,0); }
+window.addEventListener('hashchange', route); route();
 </script>
 </body>
 </html>
